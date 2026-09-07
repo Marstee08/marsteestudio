@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Mars Tee Studio — Admin</title>
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="images/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        /* Admin uses its own fixed dark palette — independent of
+           the shared --black/--white/--text/--muted variables,
+           which flip meaning when the site's dark-theme class is
+           applied (e.g. automatically, from a visitor's system
+           dark-mode setting). This page has no theme toggle of
+           its own and is meant to always look the same, so it
+           must never inherit that swap. */
+
+        .admin-page {
+            --admin-bg: #08111f;
+            --admin-text: #ffffff;
+            --admin-text-muted: #a9b4c4;
+            --admin-border: rgba(255,255,255,.14);
+
+            min-height: 100vh;
+            background: var(--admin-bg);
+            color: var(--admin-text);
+        }
+
+        /* Overrides the site-wide "p { color: var(--muted) }" rule,
+           which was the actual source of the invisible text: that
+           muted color also flips with the theme, but paragraphs
+           inside .admin-page never should. */
+        .admin-page p {
+            color: var(--admin-text-muted);
+        }
+
+        .admin-page label {
+            color: var(--admin-text);
+        }
+
+        .admin-container {
+            width: min(1200px, 92%);
+            margin: 0 auto;
+            padding: 100px 0 80px;
+        }
+
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .admin-title {
+            margin: 0;
+            font-size: clamp(2.2rem, 5vw, 4rem);
+            letter-spacing: -0.04em;
+        }
+
+        .admin-subtitle {
+            margin-top: 10px;
+            opacity: 0.65;
+        }
+
+        .admin-panel {
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(255,255,255,.09);
+            padding: 28px;
+            border-radius: 14px;
+        }
+
+        .admin-form {
+            display: grid;
+            gap: 16px;
+            max-width: 700px;
+        }
+
+        .admin-form label {
+            display: grid;
+            gap: 7px;
+            font-weight: 600;
+        }
+
+        .admin-form input,
+        .admin-form textarea,
+        .admin-form select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,.15);
+            background: rgba(255,255,255,.06);
+            color: inherit;
+            font: inherit;
+        }
+
+        .admin-form textarea {
+            resize: vertical;
+        }
+
+        .admin-form input[type="file"] {
+            padding: 12px;
+        }
+
+        .admin-button {
+            border: 1px solid rgba(255,255,255,.15);
+            background: rgba(255,255,255,.05);
+            color: var(--white);
+            padding: 13px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .admin-button.primary {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: white;
+        }
+
+        .admin-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .admin-button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            margin: 0;
+        }
+
+        .success-message {
+            color: #6ee7a8;
+            margin: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .project-fields {
+            display: grid;
+            gap: 16px;
+            padding: 20px;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 12px;
+            background: rgba(255,255,255,.025);
+        }
+
+        .project-fields h3 {
+            margin: 0;
+        }
+
+        .form-hint {
+            margin: 0;
+            opacity: .6;
+            font-size: .9rem;
+        }
+
+        .image-preview {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .image-preview img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid rgba(255,255,255,.12);
+        }
+
+        .admin-form input::placeholder,
+        .admin-form textarea::placeholder {
+            color: rgba(255,255,255,.38);
+        }
+
+        .admin-divider {
+            height: 1px;
+            background: rgba(255,255,255,.08);
+            margin: 10px 0;
+        }
+
+        /* Saved products list — previously unstyled, which let
+           text fall back to whatever the page-level color rules
+           happened to resolve to. */
+
+        #productsList {
+            display: grid;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .product-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px;
+            border: 1px solid var(--admin-border);
+            border-radius: 10px;
+            background: rgba(255,255,255,.035);
+        }
+
+        .product-info h3 {
+            margin: 0 0 4px;
+            color: var(--admin-text);
+            font-size: 1rem;
+        }
+
+        .product-info p {
+            margin: 0;
+            color: var(--admin-text-muted);
+            font-size: .85rem;
+            text-transform: capitalize;
+        }
+
+        .delete-product-btn {
+            margin-left: auto;
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border: 1px solid rgba(255,107,107,.4);
+            border-radius: 8px;
+            background: rgba(255,107,107,.08);
+            color: #ff6b6b;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .delete-product-btn:hover {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+            color: #ffffff;
+        }
+
+        .delete-product-btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .review-admin-item {
+            align-items: flex-start;
+        }
+
+        .review-admin-message {
+            margin-top: 6px !important;
+            color: var(--admin-text) !important;
+            text-transform: none !important;
+            font-size: .82rem !important;
+            line-height: 1.5;
+        }
+
+        .review-status-badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .review-status-approved {
+            background: rgba(110,231,168,.12);
+            color: #6ee7a8;
+        }
+
+        .review-status-pending {
+            background: rgba(255,196,107,.14);
+            color: #ffc46b;
+        }
+
+        .review-admin-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .approve-review-btn {
+            padding: 8px 14px;
+            border: 1px solid rgba(110,231,168,.4);
+            border-radius: 8px;
+            background: rgba(110,231,168,.08);
+            color: #6ee7a8;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .approve-review-btn:hover {
+            background: #6ee7a8;
+            border-color: #6ee7a8;
+            color: #08111f;
+        }
+
+        .approve-review-btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            padding: 24px;
+            text-align: center;
+            color: var(--admin-text-muted);
+            border: 1px dashed var(--admin-border);
+            border-radius: 10px;
+        }
+
+        @media (max-width: 700px) {
+
+            .admin-container {
+                padding-top: 70px;
+            }
+
+            .admin-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .admin-actions {
+                width: 100%;
+            }
+
+            .admin-button {
+                width: 100%;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body class="admin-page">
+
+    <main class="admin-container">
+
+
+        <!-- =========================================
+             LOGIN
+        ========================================== -->
+
+        <section
+            id="loginSection"
+            class="admin-panel reveal"
+        >
+
+            <p class="section-label">
+                MARS TEE STUDIO
+            </p>
+
+            <h1 class="admin-title">
+                Admin Login
+            </h1>
+
+            <p class="admin-subtitle">
+                Sign in to manage your catalogue.
+            </p>
+
+
+            <form
+                id="loginForm"
+                class="admin-form"
+            >
+
+                <label>
+                    Email
+
+                    <input
+                        type="email"
+                        id="loginEmail"
+                        autocomplete="email"
+                        required
+                    >
+                </label>
+
+
+                <label>
+                    Password
+
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        autocomplete="current-password"
+                        required
+                    >
+                </label>
+
+
+                <button
+                    class="admin-button primary"
+                    type="submit"
+                    id="loginButton"
+                >
+                    Log in
+                </button>
+
+
+                <p
+                    id="loginError"
+                    class="error-message hidden"
+                    role="alert"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+
+        <!-- =========================================
+             ADMIN DASHBOARD
+        ========================================== -->
+
+        <section
+            id="dashboardSection"
+            class="hidden"
+        >
+
+            <header class="admin-header">
+
+                <div>
+
+                    <p class="section-label">
+                        MARS TEE STUDIO
+                    </p>
+
+                    <h1 class="admin-title">
+                        Catalogue <span>Admin</span>
+                    </h1>
+
+                    <p class="admin-subtitle">
+                        Manage your Product and services from anywhere.
+                    </p>
+
+                </div>
+
+
+                <div class="admin-actions">
+
+                    <button
+                        class="admin-button"
+                        type="button"
+                        id="logoutButton"
+                    >
+                        Log out
+                    </button>
+
+                </div>
+
+            </header>
+
+
+
+            <!-- =====================================
+                 PRODUCT FORM
+            ====================================== -->
+
+            <section
+                class="admin-panel reveal"
+                id="productFormPanel"
+            >
+
+                <h2>
+                    Add Product / Service
+                </h2>
+
+
+                <form
+                    id="productForm"
+                    class="admin-form"
+                >
+
+
+                    <!-- BASIC DETAILS -->
+
+                    <label>
+
+                        Product / Service Name
+
+                        <input
+                            type="text"
+                            id="productName"
+                            required
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        Description
+
+                        <textarea
+                            id="productDescription"
+                            rows="5"
+                        ></textarea>
+
+                    </label>
+
+
+                    <label>
+
+                        Price
+
+                        <input
+                            type="number"
+                            id="productPrice"
+                            min="0"
+                            step="0.01"
+                        >
+
+                    </label>
+
+
+                    <!-- PROJECT TYPE -->
+
+                    <label>
+
+                        Project Type
+
+                        <select
+                            id="projectType"
+                            required
+                        >
+
+                            <option value="">
+                                Choose project type
+                            </option>
+
+                            <option value="website">
+                                Website
+                            </option>
+
+                            <option value="flyer">
+                                Flyer
+                            </option>
+
+                            <option value="label">
+                                Label
+                            </option>
+
+                            <option value="digital">
+                                Digital Experience
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <!-- =================================
+                         WEBSITE
+                    ================================== -->
+
+                    <div
+                        id="websiteFields"
+                        class="project-fields hidden"
+                    >
+
+                        <h3>
+                            Website Project
+                        </h3>
+
+
+                        <label>
+
+                            Website Screenshot
+
+                            <input
+                                type="file"
+                                id="websiteScreenshotFile"
+                                accept="image/*"
+                            >
+
+                        </label>
+
+
+                        <label>
+
+                            Website URL
+
+                            <input
+                                type="url"
+                                id="websiteUrl"
+                                placeholder="https://example.com"
+                            >
+
+                        </label>
+
+
+                        <p class="form-hint">
+                            Upload the screenshot and add the website URL.
+                        </p>
+
+                    </div>
+
+
+                    <!-- =================================
+                         FLYER / LABEL
+                    ================================== -->
+
+                    <div
+                        id="printFields"
+                        class="project-fields hidden"
+                    >
+
+                        <h3>
+                            Front & Back
+                        </h3>
+
+
+                        <label>
+
+                            Front Image
+
+                            <input
+                                type="file"
+                                id="printFrontFile"
+                                accept="image/*"
+                            >
+
+                        </label>
+
+
+                        <label>
+
+                            Back Image
+
+                            <input
+                                type="file"
+                                id="printBackFile"
+                                accept="image/*"
+                            >
+
+                        </label>
+
+
+                        <label>
+
+                            Additional Images
+
+                            <input
+                                type="file"
+                                id="printGalleryFiles"
+                                accept="image/*"
+                                multiple
+                            >
+
+                        </label>
+
+
+                        <p class="form-hint">
+                            Flyers and labels can have front, back,
+                            and additional images.
+                        </p>
+
+                    </div>
+
+
+                    <!-- =================================
+                         DIGITAL EXPERIENCE
+                    ================================== -->
+
+                    <div
+                        id="digitalFields"
+                        class="project-fields hidden"
+                    >
+
+                        <h3>
+                            Digital Experience
+                        </h3>
+
+
+                        <label>
+
+                            Preview Image
+
+                            <input
+                                type="file"
+                                id="digitalPreviewFile"
+                                accept="image/*"
+                            >
+
+                        </label>
+
+
+                        <label>
+
+                            Experience URL
+
+                            <input
+                                type="url"
+                                id="digitalUrl"
+                                placeholder="https://example.com"
+                            >
+
+                        </label>
+
+                    </div>
+                                        <!-- =================================
+                         CATEGORY & PACKAGE
+                    ================================== -->
+
+                    <div class="admin-divider"></div>
+
+
+                    <label>
+
+                        Category
+
+                        <input
+                            type="text"
+                            id="productCategory"
+                            placeholder="e.g. Web Design, Flyer, Digital Experience"
+                        >
+
+                    </label>
+
+
+                    <label>
+
+                        Package
+
+                        <select id="productPackage">
+                            <option value="">No package (Graphics/one-off item)</option>
+                            <option value="Basic">Basic</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Premium">Premium</option>
+                            <option value="Luxury">Luxury</option>
+                        </select>
+
+                    </label>
+
+
+                    <!-- =================================
+                         CLIENT
+                    ================================== -->
+
+                    <label>
+
+                        Client Name
+
+                        <input
+                            type="text"
+                            id="clientName"
+                            placeholder="Optional"
+                        >
+
+                    </label>
+
+
+                    <!-- =================================
+                         WEBSITE / DIGITAL URL
+                    ================================== -->
+
+                    <label>
+
+                        Website / Project URL
+
+                        <input
+                            type="url"
+                            id="productWebsiteUrl"
+                            placeholder="https://example.com"
+                        >
+
+                    </label>
+
+
+                    <!-- =================================
+                         DEMO VIDEO
+                    ================================== -->
+
+                    <label>
+
+                        Demo Video (optional)
+
+                        <input
+                            type="file"
+                            id="productVideo"
+                            accept="video/mp4,video/webm,video/quicktime"
+                        >
+
+                    </label>
+
+                    <p class="form-hint">
+                        MP4, WebM or MOV, up to 100MB. Shown as a "Watch Demo" option on the product card. For faster page loads, compress the video on your phone/computer before uploading — browsers can't shrink video the way they can images.
+                    </p>
+
+                    <video
+                        id="videoPreview"
+                        class="hidden"
+                        controls
+                        style="width:100%;max-height:220px;border-radius:10px;margin-top:8px;"
+                    ></video>
+
+
+                    <!-- =================================
+                         FEATURED
+                    ================================== -->
+
+                    <label
+                        style="
+                            display:flex;
+                            align-items:center;
+                            gap:10px;
+                        "
+                    >
+
+                        <input
+                            type="checkbox"
+                            id="productFeatured"
+                        >
+
+                        Featured product
+
+                    </label>
+
+
+                    <!-- =================================
+                         ACTIVE
+                    ================================== -->
+
+                    <label
+                        style="
+                            display:flex;
+                            align-items:center;
+                            gap:10px;
+                        "
+                    >
+
+                        <input
+                            type="checkbox"
+                            id="productActive"
+                            checked
+                        >
+
+                        Active / visible on website
+
+                    </label>
+
+
+                    <!-- =================================
+                         IMAGE PREVIEW
+                    ================================== -->
+
+                    <div>
+
+                        <p class="form-hint">
+                            Selected image preview
+                        </p>
+
+                        <div
+                            id="imagePreview"
+                            class="image-preview"
+                        ></div>
+
+                    </div>
+
+
+                    <!-- =================================
+                         SAVE
+                    ================================== -->
+
+                    <div class="admin-actions">
+
+                        <button
+                            type="submit"
+                            class="admin-button primary"
+                            id="saveProductButton"
+                        >
+                            Save Product
+                        </button>
+
+
+                        <button
+                            type="reset"
+                            class="admin-button"
+                            id="resetProductButton"
+                        >
+                            Clear
+                        </button>
+
+                    </div>
+
+
+                    <p
+                        id="productFormMessage"
+                        role="status"
+                    ></p>
+
+
+                </form>
+
+            </section>
+
+
+            <!-- =====================================
+                 Product LIST
+            ====================================== -->
+
+            <section
+                class="admin-panel reveal"
+                style="margin-top:30px;"
+            >
+
+                <h2>
+                    Existing Product
+                </h2>
+
+                <p class="admin-subtitle">
+                    Product already saved in your catalogue.
+                </p>
+
+
+                <div id="productsList">
+
+                    <p class="form-hint">
+                        Loading Product...
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================
+                 REVIEWS
+            ====================================== -->
+
+            <section
+                class="admin-panel reveal"
+                style="margin-top:30px;"
+            >
+
+                <h2>
+                    Customer Reviews
+                </h2>
+
+                <p class="admin-subtitle">
+                    Approve a review before it appears on the public Reviews page. Delete removes it permanently.
+                </p>
+
+                <div id="reviewsAdminList">
+
+                    <p class="form-hint">
+                        Loading reviews...
+                    </p>
+
+                </div>
+
+            </section>
+
+
+        </section>
+
+    </main>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+<script>
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+    document.body.insertAdjacentHTML("afterbegin", `
+        <div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0e1524;color:#f5f7fb;text-align:center;padding:40px;font-family:sans-serif;">
+            <div style="max-width:420px;">
+                <h2 style="margin-bottom:12px;">Couldn't load the admin panel</h2>
+                <p style="color:#aeb8c8;margin-bottom:20px;">The required library failed to load — this is usually a connection issue or a browser extension blocking it. Please check your connection and refresh the page.</p>
+                <button onclick="location.reload()" style="padding:12px 24px;border:none;border-radius:8px;background:#0b63f6;color:#fff;font-weight:700;cursor:pointer;">Refresh</button>
+            </div>
+        </div>
+    `);
+    throw new Error("Mars Tee Studio Admin: Supabase library unavailable — admin panel halted safely.");
+}
+
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PRODUCT_TABLE="Product";
+const PRODUCT_VIDEO_BUCKET="product-video";
+
+const loginSection=document.getElementById("loginSection");
+const dashboardSection=document.getElementById("dashboardSection");
+const loginForm=document.getElementById("loginForm");
+const loginEmail=document.getElementById("loginEmail");
+const loginPassword=document.getElementById("loginPassword");
+const loginButton=document.getElementById("loginButton");
+const loginError=document.getElementById("loginError");
+const logoutButton=document.getElementById("logoutButton");
+const productForm=document.getElementById("productForm");
+const productFormPanel=document.getElementById("productFormPanel");
+const productFormMessage=document.getElementById("productFormMessage");
+const projectType=document.getElementById("projectType");
+const imagePreview=document.getElementById("imagePreview");
+
+function showDashboard(){
+    loginSection?.classList.add("hidden");
+    dashboardSection?.classList.remove("hidden");
+    dashboardSection?.querySelectorAll(".reveal").forEach(el => el.classList.add("active"));
+    loadProducts();
+    loadReviews();
+}
+function showLogin(){
+    dashboardSection?.classList.add("hidden");
+    loginSection?.classList.remove("hidden");
+    loginSection?.classList.add("active");
+}
+async function checkSession(){
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error){console.error(error);showLogin();return;}
+    if(data.session)showDashboard();else showLogin();
+}
+
+loginForm?.addEventListener("submit",async e=>{
+    e.preventDefault();
+    loginError?.classList.add("hidden");
+    loginButton.disabled=true;
+    loginButton.textContent="Logging in...";
+    try{
+        const {data,error}=await supabaseClient.auth.signInWithPassword({
+            email:loginEmail.value.trim(),
+            password:loginPassword.value
+        });
+        if(error)throw error;
+        if(data.session)showDashboard();
+    }catch(error){
+        if(loginError){
+            loginError.textContent=error.message;
+            loginError.classList.remove("hidden");
+        }
+    }finally{
+        loginButton.disabled=false;
+        loginButton.textContent="Log in";
+    }
+});
+
+logoutButton?.addEventListener("click",async()=>{
+    await supabaseClient.auth.signOut();
+    showLogin();
+    loginForm?.reset();
+});
+
+supabaseClient.auth.onAuthStateChange((_event,session)=>{
+    if(session)showDashboard();else showLogin();
+});
+
+const websiteFields=document.getElementById("websiteFields");
+const printFields=document.getElementById("printFields");
+const digitalFields=document.getElementById("digitalFields");
+
+function updateProjectTypeFields(){
+    websiteFields?.classList.add("hidden");
+    printFields?.classList.add("hidden");
+    digitalFields?.classList.add("hidden");
+    if(projectType?.value==="website")websiteFields?.classList.remove("hidden");
+    if(projectType?.value==="flyer"||projectType?.value==="label")printFields?.classList.remove("hidden");
+    if(projectType?.value==="digital")digitalFields?.classList.remove("hidden");
+}
+projectType?.addEventListener("change",updateProjectTypeFields);
+
+function previewFiles(files){
+    if(!imagePreview)return;
+    imagePreview.innerHTML="";
+    files.forEach(file=>{
+        if(!file.type.startsWith("image/"))return;
+        const img=document.createElement("img");
+        img.src=URL.createObjectURL(file);
+        img.alt="Image preview";
+        imagePreview.appendChild(img);
+    });
+}
+
+function attachPreview(id){
+    const input=document.getElementById(id);
+    input?.addEventListener("change",()=>previewFiles(Array.from(input.files)));
+}
+
+const videoInput=document.getElementById("productVideo");
+const videoPreview=document.getElementById("videoPreview");
+videoInput?.addEventListener("change",()=>{
+    const file=videoInput.files?.[0];
+    if(!videoPreview)return;
+    if(!file){
+        videoPreview.classList.add("hidden");
+        videoPreview.removeAttribute("src");
+        return;
+    }
+    if(!file.type.startsWith("video/")){
+        alert(`${file.name} is not a video file.`);
+        videoInput.value="";
+        videoPreview.classList.add("hidden");
+        return;
+    }
+    if(file.size>100*1024*1024){
+        alert(`${file.name} is larger than 100MB.`);
+        videoInput.value="";
+        videoPreview.classList.add("hidden");
+        return;
+    }
+    videoPreview.src=URL.createObjectURL(file);
+    videoPreview.classList.remove("hidden");
+});
+
+[
+    "frontImageFile",
+    "backImageFile",
+    "galleryImageFiles",
+    "websiteScreenshotFile",
+    "digitalPreviewFile"
+].forEach(attachPreview);
+
+function getFile(id){
+    const input=document.getElementById(id);
+    return input?.files?.[0]||null;
+}
+
+function getFiles(id){
+    const input=document.getElementById(id);
+    return input?.files?Array.from(input.files):[];
+}
+
+async function compressImage(file, maxDimension = 1600, quality = 0.82) {
+    // Skip compression for already-small files, and for GIFs
+    // specifically - re-encoding to JPEG would silently destroy
+    // any animation.
+    if (file.size < 300 * 1024) return file;
+    if (file.type === "image/gif") return file;
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+
+            let { width, height } = img;
+            if (width > maxDimension || height > maxDimension) {
+                const scale = maxDimension / Math.max(width, height);
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+                if (!blob || blob.size >= file.size) {
+                    // Compression didn't actually help - use the original.
+                    resolve(file);
+                    return;
+                }
+                const compressedFile = new File(
+                    [blob],
+                    file.name.replace(/\.\w+$/, ".jpg"),
+                    { type: "image/jpeg" }
+                );
+                resolve(compressedFile);
+            }, "image/jpeg", quality);
+        };
+
+        img.onerror = () => resolve(file); // fall back to original on any decode error
+
+        img.src = objectUrl;
+    });
+}
+
+async function uploadProductImage(file){
+    if(!file)return null;
+    if(!file.type.startsWith("image/"))throw new Error(`${file.name} is not an image.`);
+    if(file.size>10*1024*1024)throw new Error(`${file.name} is larger than 10MB.`);
+
+    const compressed = await compressImage(file);
+
+    const ext=compressed.name.split(".").pop().toLowerCase();
+    const path=`products/${crypto.randomUUID()}.${ext}`;
+
+    const {error}=await supabaseClient.storage
+        .from(PRODUCT_BUCKET)
+        .upload(path,compressed,{cacheControl:"3600",upsert:false});
+
+    if(error){
+        console.error("Storage upload error:",error);
+        throw new Error(`Image upload failed: ${error.message}`);
+    }
+
+    const {data}=supabaseClient.storage
+        .from(PRODUCT_BUCKET)
+        .getPublicUrl(path);
+
+    return data.publicUrl;
+}
+
+async function uploadMultipleImages(files){
+    const urls=[];
+    for(const file of files){
+        const url=await uploadProductImage(file);
+        if(url)urls.push(url);
+    }
+    return urls;
+}
+
+async function uploadProductVideo(file){
+    if(!file)return null;
+    if(!file.type.startsWith("video/"))throw new Error(`${file.name} is not a video.`);
+    if(file.size>100*1024*1024)throw new Error(`${file.name} is larger than 100MB.`);
+
+    const ext=file.name.split(".").pop().toLowerCase();
+    const path=`products/${crypto.randomUUID()}.${ext}`;
+
+    const {error}=await supabaseClient.storage
+        .from(PRODUCT_VIDEO_BUCKET)
+        .upload(path,file,{cacheControl:"3600",upsert:false});
+
+    if(error){
+        console.error("Video upload error:",error);
+        throw new Error(`Video upload failed: ${error.message}`);
+    }
+
+    const {data}=supabaseClient.storage
+        .from(PRODUCT_VIDEO_BUCKET)
+        .getPublicUrl(path);
+
+    return data?.publicUrl||null;
+}
+
+productForm?.addEventListener("submit",async e=>{
+    e.preventDefault();
+
+    const saveButton=productForm.querySelector('button[type="submit"]');
+
+    try{
+        if(saveButton)saveButton.disabled=true;
+        if(productFormMessage){
+            productFormMessage.className="";
+            productFormMessage.textContent="Uploading images...";
+        }
+
+        const name=document.getElementById("productName")?.value.trim();
+        const description=document.getElementById("productDescription")?.value.trim()||null;
+        const priceValue=document.getElementById("productPrice")?.value;
+        const price=priceValue?Number(priceValue):null;
+        const type=projectType?.value||null;
+        const clientName=document.getElementById("clientName")?.value.trim()||null;
+        const packageTier=document.getElementById("productPackage")?.value.trim()||null;
+        const isActive=document.getElementById("productActive")?.checked??true;
+        const isFeatured=document.getElementById("productFeatured")?.checked??false;
+
+        let websiteUrl=document.getElementById("websiteUrl")?.value.trim()||null;
+        if(!websiteUrl)websiteUrl=document.getElementById("productWebsiteUrl")?.value.trim()||null;
+
+        if(!name)throw new Error("Please enter a product name.");
+
+        let imageUrl=null;
+        let frontUrl=null;
+        let backUrl=null;
+        let galleryUrls=[];
+
+        if(type==="website"){
+            imageUrl=await uploadProductImage(getFile("websiteScreenshotFile"));
+        }
+
+        if(type==="flyer"||type==="label"){
+            frontUrl=await uploadProductImage(getFile("frontImageFile"));
+            backUrl=await uploadProductImage(getFile("backImageFile"));
+            galleryUrls=await uploadMultipleImages(getFiles("galleryImageFiles"));
+            imageUrl=frontUrl;
+        }
+
+        if(type==="digital"){
+            imageUrl=await uploadProductImage(getFile("digitalPreviewFile"));
+        }
+
+        if(productFormMessage)productFormMessage.textContent="Uploading video...";
+        const demoVideoUrl=await uploadProductVideo(getFile("productVideo"));
+
+        if(productFormMessage)productFormMessage.textContent="Saving product...";
+
+        const productData={
+            Name:name,
+            Description:description,
+            Price:price,
+            Image_url:imageUrl,
+            Is_active:isActive,
+            project_type:type,
+            website_url:websiteUrl,
+            front_image_url:frontUrl,
+            back_image_url:backUrl,
+            gallery_URLs:galleryUrls.length?galleryUrls:null,
+            client_name:clientName,
+            is_featured:isFeatured,
+            demo_video_url:demoVideoUrl,
+            package:packageTier
+        };
+
+        const {data,error}=await supabaseClient
+            .from(PRODUCT_TABLE)
+            .insert(productData)
+            .select()
+            .single();
+
+        if(error)throw error;
+
+        console.log("Product saved:",data);
+
+        if(productFormMessage){
+            productFormMessage.className="success-message";
+            productFormMessage.textContent="Product saved successfully!";
+        }
+
+        productForm.reset();
+        const active=document.getElementById("productActive");
+        if(active)active.checked=true;
+        if(imagePreview)imagePreview.innerHTML="";
+        if(videoPreview){
+            videoPreview.classList.add("hidden");
+            videoPreview.removeAttribute("src");
+        }
+        updateProjectTypeFields();
+        loadProducts();
+
+    }catch(error){
+        console.error("SAVE PRODUCT ERROR:",error);
+        if(productFormMessage){
+            productFormMessage.className="error-message";
+            productFormMessage.textContent=error.message||"Could not save product.";
+        }
+    }finally{
+        if(saveButton)saveButton.disabled=false;
+    }
+});
+
+async function loadProducts(){
+    const list=document.getElementById("productsList");
+    if(!list)return;
+
+    try{
+        const {data,error}=await supabaseClient
+            .from(PRODUCT_TABLE)
+            .select("*");
+
+        if(error)throw error;
+
+        if(!data?.length){
+            list.innerHTML='<div class="empty-state">No products yet.</div>';
+            return;
+        }
+
+        list.innerHTML=data.map(product=>{
+            const image=product.Image_url||product.front_image_url||"";
+            return `
+                <article class="product-item reveal-scale">
+                    ${image?`<img src="${escapeHtml(image)}" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">`:""}
+                    <div class="product-info">
+                        <h3>${escapeHtml(product.Name||"")}</h3>
+                        <p>${escapeHtml(product.project_type||"")}</p>
+                    </div>
+                    <button type="button" class="delete-product-btn" data-id="${escapeHtml(product.id)}">
+                        Delete
+                    </button>
+                </article>
+            `;
+        }).join("");
+
+        if (typeof observeReveal === "function") {
+            observeReveal([...list.querySelectorAll(".product-item")]);
+        }
+
+    }catch(error){
+        console.error("LOAD PRODUCTS ERROR:",error);
+        list.innerHTML=`<p class="error-message">${escapeHtml(error.message||"Could not load products.")}</p>`;
+    }
+}
+
+let deleteInProgress=false;
+
+document.getElementById("productsList")?.addEventListener("click",async e=>{
+    const button=e.target.closest(".delete-product-btn");
+    if(!button||deleteInProgress)return;
+
+    const id=button.dataset.id;
+    if(!id){
+        console.error("DELETE PRODUCT ERROR: missing product id on button");
+        return;
+    }
+
+    const productName=button.closest(".product-item")?.querySelector("h3")?.textContent||"this product";
+    if(!window.confirm(`Delete "${productName}"? This cannot be undone.`))return;
+
+    deleteInProgress=true;
+    button.disabled=true;
+    button.textContent="Deleting...";
+
+    try{
+        const {error}=await supabaseClient
+            .from(PRODUCT_TABLE)
+            .delete()
+            .eq("id",id);
+
+        if(error)throw error;
+
+        await loadProducts();
+    }catch(error){
+        console.error("DELETE PRODUCT ERROR:",error);
+        alert(error.message||"Could not delete product.");
+        button.disabled=false;
+        button.textContent="Delete";
+    }finally{
+        deleteInProgress=false;
+    }
+});
+
+async function loadReviews(){
+    const list=document.getElementById("reviewsAdminList");
+    if(!list)return;
+
+    try{
+        const {data,error}=await supabaseClient
+            .from("Review")
+            .select("*")
+            .order("created_at",{ascending:false});
+
+        if(error)throw error;
+
+        if(!data?.length){
+            list.innerHTML='<div class="empty-state">No reviews yet.</div>';
+            return;
+        }
+
+        list.innerHTML=data.map(review=>{
+            const stars="★".repeat(review.rating)+"☆".repeat(5-review.rating);
+            const statusBadge=review.is_approved
+                ?'<span class="review-status-badge review-status-approved">Approved</span>'
+                :'<span class="review-status-badge review-status-pending">Pending</span>';
+
+            return `
+                <article class="product-item review-admin-item reveal-scale">
+                    <div class="product-info">
+                        <h3>${escapeHtml(review.name||"Anonymous")} — ${stars} ${statusBadge}</h3>
+                        <p>${escapeHtml(review.service||"")}</p>
+                        <p class="review-admin-message">${escapeHtml(review.message||"")}</p>
+                    </div>
+                    <div class="review-admin-actions">
+                        ${!review.is_approved?`<button type="button" class="approve-review-btn" data-id="${escapeHtml(review.id)}">Approve</button>`:""}
+                        <button type="button" class="delete-product-btn" data-review-id="${escapeHtml(review.id)}">
+                            Delete
+                        </button>
+                    </div>
+                </article>
+            `;
+        }).join("");
+
+        if (typeof observeReveal === "function") {
+            observeReveal([...list.querySelectorAll(".review-admin-item")]);
+        }
+
+    }catch(error){
+        console.error("LOAD REVIEWS ERROR:",error);
+        list.innerHTML=`<p class="error-message">${escapeHtml(error.message||"Could not load reviews.")}</p>`;
+    }
+}
+
+let reviewActionInProgress=false;
+
+document.getElementById("reviewsAdminList")?.addEventListener("click",async e=>{
+    if(reviewActionInProgress)return;
+
+    const approveBtn=e.target.closest(".approve-review-btn");
+    const deleteBtn=e.target.closest(".delete-product-btn");
+
+    if(approveBtn){
+        const id=approveBtn.dataset.id;
+        if(!id)return;
+
+        reviewActionInProgress=true;
+        approveBtn.disabled=true;
+        approveBtn.textContent="Approving...";
+
+        try{
+            const {error}=await supabaseClient
+                .from("Review")
+                .update({is_approved:true})
+                .eq("id",id);
+
+            if(error)throw error;
+            await loadReviews();
+        }catch(error){
+            console.error("APPROVE REVIEW ERROR:",error);
+            alert(error.message||"Could not approve review.");
+            approveBtn.disabled=false;
+            approveBtn.textContent="Approve";
+        }finally{
+            reviewActionInProgress=false;
+        }
+        return;
+    }
+
+    if(deleteBtn&&deleteBtn.dataset.reviewId){
+        const id=deleteBtn.dataset.reviewId;
+        const reviewerName=deleteBtn.closest(".review-admin-item")?.querySelector("h3")?.textContent||"this review";
+        if(!window.confirm(`Delete the review from "${reviewerName}"? This cannot be undone.`))return;
+
+        reviewActionInProgress=true;
+        deleteBtn.disabled=true;
+        deleteBtn.textContent="Deleting...";
+
+        try{
+            const {error}=await supabaseClient
+                .from("Review")
+                .delete()
+                .eq("id",id);
+
+            if(error)throw error;
+            await loadReviews();
+        }catch(error){
+            console.error("DELETE REVIEW ERROR:",error);
+            alert(error.message||"Could not delete review.");
+            deleteBtn.disabled=false;
+            deleteBtn.textContent="Delete";
+        }finally{
+            reviewActionInProgress=false;
+        }
+    }
+});
+
+function escapeHtml(value){
+    return String(value)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+
+updateProjectTypeFields();
+checkSession();
+</script>
+
+</body>
+</html>
+       

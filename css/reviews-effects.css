@@ -1,0 +1,242 @@
+/* =========================================
+   REVIEWS PAGE — LUXURY PARALLAX + 3D EFFECTS
+   Same pattern as services-effects.css.
+   Self-contained: own observers, own classes,
+   independent `rotate`/`translate`/`scale` properties.
+   Note: the reviews grid itself is populated dynamically,
+   so the reveal here targets the section as a whole
+   rather than individual review cards.
+   ========================================= */
+
+/* ---- Hero: cinematic parallax with ambient glow ---- */
+.page-hero {
+  overflow: hidden;
+  perspective: 1200px;
+  position: relative;
+}
+
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at 78% 22%,
+    color-mix(in srgb, var(--blue) 16%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+  animation: heroGlowBreathe 7s ease-in-out infinite;
+  z-index: 0;
+}
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes heroGlowBreathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* ---- Trust box: lift-in with ambient glow ---- */
+.trust-box {
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  scale: 0.95;
+  translate: 0 40px;
+  transition:
+    opacity .9s cubic-bezier(.16,1,.3,1),
+    scale 1s cubic-bezier(.16,1,.3,1),
+    translate 1s cubic-bezier(.16,1,.3,1);
+}
+
+.trust-box.section-reveal {
+  opacity: 1;
+  scale: 1;
+  translate: 0 0;
+}
+
+.trust-box::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(
+    circle at 85% 20%,
+    color-mix(in srgb, var(--white) 22%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+  animation: heroGlowBreathe 6s ease-in-out infinite;
+  z-index: 0;
+}
+
+.trust-content,
+.trust-mark {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Reviews grid: reveal as a whole (cards render dynamically) ---- */
+.reviews-heading,
+.reviews-grid,
+.reviews-empty {
+  opacity: 0;
+  translate: 0 30px;
+  transition:
+    opacity .8s cubic-bezier(.16,1,.3,1),
+    translate .9s cubic-bezier(.16,1,.3,1);
+}
+
+.reviews-heading.section-reveal,
+.reviews-grid.section-reveal,
+.reviews-empty.section-reveal {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ---- Guidelines grid: stagger reveal + cursor glare ---- */
+.guidelines-grid {
+  perspective: 1400px;
+}
+
+.guideline-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  translate: 0 25px;
+  scale: 0.97;
+  transition:
+    opacity .6s cubic-bezier(.16,1,.3,1),
+    translate .7s cubic-bezier(.16,1,.3,1),
+    scale .7s cubic-bezier(.16,1,.3,1),
+    box-shadow .4s ease;
+}
+
+.guidelines-grid.section-reveal .guideline-card {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.guidelines-grid.section-reveal .guideline-card:nth-child(1) { transition-delay: .05s; }
+.guidelines-grid.section-reveal .guideline-card:nth-child(2) { transition-delay: .12s; }
+.guidelines-grid.section-reveal .guideline-card:nth-child(3) { transition-delay: .19s; }
+.guidelines-grid.section-reveal .guideline-card:nth-child(4) { transition-delay: .26s; }
+
+.guideline-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--blue-light) 80%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.guideline-card:hover::before {
+  opacity: 1;
+}
+
+.guideline-card:hover {
+  box-shadow: 0 25px 45px -15px color-mix(in srgb, var(--blue) 25%, transparent);
+}
+
+.guideline-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Review form card: floating glass panel ---- */
+.review-form-card {
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  opacity: 0;
+  scale: 0.96;
+  translate: 0 40px;
+  transition:
+    opacity .9s cubic-bezier(.16,1,.3,1),
+    scale 1s cubic-bezier(.16,1,.3,1),
+    translate 1s cubic-bezier(.16,1,.3,1),
+    rotate .35s cubic-bezier(.16,1,.3,1),
+    box-shadow .35s ease;
+}
+
+.review-form-card.section-reveal {
+  opacity: 1;
+  scale: 1;
+  translate: 0 0;
+}
+
+.review-form-card:hover {
+  box-shadow: 0 40px 80px -25px color-mix(in srgb, var(--blue) 30%, transparent);
+}
+
+.review-form-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 20%),
+    color-mix(in srgb, var(--white) 45%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.review-form-card:hover::before {
+  opacity: 0.4;
+}
+
+.review-form-card form,
+.review-form-intro {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Simple CTA: fade + rise reveal ---- */
+.reviews-cta .simple-cta {
+  opacity: 0;
+  translate: 0 35px;
+  transition:
+    opacity .8s cubic-bezier(.16,1,.3,1),
+    translate .9s cubic-bezier(.16,1,.3,1);
+}
+
+.reviews-cta .simple-cta.section-reveal {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ---- Respect users who prefer less motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .page-hero::before,
+  .trust-box::before {
+    animation: none !important;
+  }
+
+  .trust-box,
+  .reviews-heading,
+  .reviews-grid,
+  .reviews-empty,
+  .guideline-card,
+  .review-form-card,
+  .reviews-cta .simple-cta {
+    opacity: 1 !important;
+    transition: none !important;
+    rotate: none !important;
+    translate: none !important;
+    scale: none !important;
+  }
+}

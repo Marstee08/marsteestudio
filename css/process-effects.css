@@ -1,0 +1,154 @@
+/* =========================================
+   PROCESS PAGE — LUXURY PARALLAX + 3D EFFECTS
+   Same pattern as services-effects.css.
+   Self-contained: own observers, own classes,
+   independent `rotate`/`translate`/`scale` properties.
+   ========================================= */
+
+/* ---- Hero: cinematic parallax with ambient glow ---- */
+.page-hero {
+  overflow: hidden;
+  perspective: 1200px;
+  position: relative;
+}
+
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at 78% 22%,
+    color-mix(in srgb, var(--blue) 16%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+  animation: heroGlowBreathe 7s ease-in-out infinite;
+  z-index: 0;
+}
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes heroGlowBreathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* ---- Process intro: reveal on scroll ---- */
+.process-intro-grid {
+  opacity: 0;
+  translate: 0 35px;
+  transition:
+    opacity .8s cubic-bezier(.16,1,.3,1),
+    translate .9s cubic-bezier(.16,1,.3,1);
+}
+
+.process-intro-grid.section-reveal {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ---- Timeline: numbered items get the 3D flip-in ---- */
+.process-timeline-list {
+  perspective: 1800px;
+}
+
+.process-timeline-number,
+.process-timeline-content {
+  opacity: 0;
+  rotate: 1 0 0 45deg;
+  translate: 0 50px;
+  transform-origin: top center;
+  transition:
+    opacity .9s cubic-bezier(.16,1,.3,1),
+    rotate 1s cubic-bezier(.16,1,.3,1),
+    translate 1s cubic-bezier(.16,1,.3,1);
+}
+
+.process-timeline-content {
+  transition-delay: .1s;
+}
+
+.process-timeline-item.step-reveal .process-timeline-number,
+.process-timeline-item.step-reveal .process-timeline-content {
+  opacity: 1;
+  rotate: 1 0 0 0deg;
+  translate: 0 0;
+}
+
+/* ---- Expectations grid: stagger reveal + cursor glare ---- */
+.expectations-grid {
+  perspective: 1400px;
+}
+
+.expectation-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  translate: 0 25px;
+  scale: 0.97;
+  transition:
+    opacity .6s cubic-bezier(.16,1,.3,1),
+    translate .7s cubic-bezier(.16,1,.3,1),
+    scale .7s cubic-bezier(.16,1,.3,1),
+    box-shadow .4s ease;
+}
+
+.expectations-grid.section-reveal .expectation-card {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.expectations-grid.section-reveal .expectation-card:nth-child(1) { transition-delay: .05s; }
+.expectations-grid.section-reveal .expectation-card:nth-child(2) { transition-delay: .12s; }
+.expectations-grid.section-reveal .expectation-card:nth-child(3) { transition-delay: .19s; }
+.expectations-grid.section-reveal .expectation-card:nth-child(4) { transition-delay: .26s; }
+
+.expectation-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--blue-light) 80%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.expectation-card:hover::before {
+  opacity: 1;
+}
+
+.expectation-card:hover {
+  box-shadow: 0 25px 45px -15px color-mix(in srgb, var(--blue) 25%, transparent);
+}
+
+.expectation-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Respect users who prefer less motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .page-hero::before {
+    animation: none !important;
+  }
+
+  .process-intro-grid,
+  .process-timeline-number,
+  .process-timeline-content,
+  .expectation-card {
+    opacity: 1 !important;
+    transition: none !important;
+    rotate: none !important;
+    translate: none !important;
+    scale: none !important;
+  }
+}

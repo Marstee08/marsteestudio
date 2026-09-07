@@ -1,0 +1,201 @@
+/* =========================================
+   PORTFOLIO PAGE — LUXURY PARALLAX + 3D EFFECTS
+   Same pattern as services-effects.css.
+   Self-contained: own observers, own classes,
+   independent `rotate`/`translate`/`scale` properties.
+   ========================================= */
+
+/* ---- Hero: cinematic parallax with ambient glow ---- */
+.page-hero {
+  overflow: hidden;
+  perspective: 1200px;
+  position: relative;
+}
+
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at 78% 22%,
+    color-mix(in srgb, var(--blue) 16%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+  animation: heroGlowBreathe 7s ease-in-out infinite;
+  z-index: 0;
+}
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes heroGlowBreathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* ---- Portfolio intro: reveal on scroll ---- */
+.portfolio-intro {
+  opacity: 0;
+  translate: 0 35px;
+  transition:
+    opacity .8s cubic-bezier(.16,1,.3,1),
+    translate .9s cubic-bezier(.16,1,.3,1);
+}
+
+.portfolio-intro.section-reveal {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ---- Portfolio grid: stagger reveal + cursor glare ---- */
+.portfolio-grid {
+  perspective: 1400px;
+}
+
+.portfolio-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  translate: 0 25px;
+  scale: 0.97;
+  transition:
+    opacity .6s cubic-bezier(.16,1,.3,1),
+    translate .7s cubic-bezier(.16,1,.3,1),
+    scale .7s cubic-bezier(.16,1,.3,1),
+    rotate .4s cubic-bezier(.16,1,.3,1),
+    box-shadow .4s ease;
+}
+
+.portfolio-grid.section-reveal .portfolio-card {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.portfolio-grid.section-reveal .portfolio-card:nth-child(1) { transition-delay: .05s; }
+.portfolio-grid.section-reveal .portfolio-card:nth-child(2) { transition-delay: .12s; }
+.portfolio-grid.section-reveal .portfolio-card:nth-child(3) { transition-delay: .19s; }
+.portfolio-grid.section-reveal .portfolio-card:nth-child(4) { transition-delay: .26s; }
+.portfolio-grid.section-reveal .portfolio-card:nth-child(5) { transition-delay: .33s; }
+.portfolio-grid.section-reveal .portfolio-card:nth-child(6) { transition-delay: .40s; }
+
+.portfolio-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--white) 45%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.portfolio-card:hover::before {
+  opacity: 0.5;
+}
+
+.portfolio-card:hover {
+  scale: 1.02;
+  box-shadow: 0 30px 60px -20px color-mix(in srgb, var(--blue) 30%, transparent);
+}
+
+.portfolio-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Principles grid: stagger reveal + cursor glare ---- */
+.principles-grid {
+  perspective: 1400px;
+}
+
+.principle-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  translate: 0 25px;
+  scale: 0.97;
+  transition:
+    opacity .6s cubic-bezier(.16,1,.3,1),
+    translate .7s cubic-bezier(.16,1,.3,1),
+    scale .7s cubic-bezier(.16,1,.3,1),
+    box-shadow .4s ease;
+}
+
+.principles-grid.section-reveal .principle-card {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.principles-grid.section-reveal .principle-card:nth-child(1) { transition-delay: .05s; }
+.principles-grid.section-reveal .principle-card:nth-child(2) { transition-delay: .12s; }
+.principles-grid.section-reveal .principle-card:nth-child(3) { transition-delay: .19s; }
+.principles-grid.section-reveal .principle-card:nth-child(4) { transition-delay: .26s; }
+
+.principle-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--blue-light) 80%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.principle-card:hover::before {
+  opacity: 1;
+}
+
+.principle-card:hover {
+  box-shadow: 0 25px 45px -15px color-mix(in srgb, var(--blue) 25%, transparent);
+}
+
+.principle-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Simple CTA: fade + rise reveal ---- */
+.portfolio-cta .simple-cta {
+  opacity: 0;
+  translate: 0 35px;
+  transition:
+    opacity .8s cubic-bezier(.16,1,.3,1),
+    translate .9s cubic-bezier(.16,1,.3,1);
+}
+
+.portfolio-cta .simple-cta.section-reveal {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ---- Respect users who prefer less motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .page-hero::before {
+    animation: none !important;
+  }
+
+  .portfolio-intro,
+  .portfolio-card,
+  .principle-card,
+  .portfolio-cta .simple-cta {
+    opacity: 1 !important;
+    transition: none !important;
+    rotate: none !important;
+    translate: none !important;
+    scale: none !important;
+  }
+}
