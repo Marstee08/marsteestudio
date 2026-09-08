@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 
-Sitemap: https://github.com/Marstee08/marsteestudio.gitsitemap.xml
+Sitemap: https://marstee08.github.io/marsteestudio/sitemap.xml

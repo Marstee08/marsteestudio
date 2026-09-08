@@ -821,6 +821,7 @@ async function getPortfolioImage(path) {
 
 async function loadReviews() {
     const grid = document.getElementById("reviewsList");
+    const summaryEl = document.getElementById("reviewsSummary");
     if (!grid || !siteSupabaseClient) return;
 
     showGridLoading(grid, 3);
@@ -835,23 +836,47 @@ async function loadReviews() {
         if (error) throw error;
         if (!data?.length) {
             restoreGridEmpty(grid);
+            if (summaryEl) summaryEl.innerHTML = "";
             return;
         }
+
+        if (summaryEl) {
+            const avg = data.reduce((sum, r) => sum + (r.rating || 0), 0) / data.length;
+            const avgRounded = Math.round(avg * 10) / 10;
+            const fullStars = Math.round(avg);
+            const summaryStars = "★".repeat(fullStars) + "☆".repeat(5 - fullStars);
+            summaryEl.innerHTML = `
+                <span class="reviews-summary-score">${avgRounded.toFixed(1)}</span>
+                <div class="reviews-summary-detail">
+                    <div class="reviews-summary-stars">${summaryStars}</div>
+                    <span>Based on ${data.length} review${data.length === 1 ? "" : "s"}</span>
+                </div>
+            `;
+        }
+
+        const AVATAR_COLORS = ["#0b63f6", "#e0473e", "#1a9c6b", "#c9750c", "#7b4fd6", "#0aa1a8"];
 
         const cards = data.map(review => {
             const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
             const date = review.created_at
                 ? new Date(review.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })
                 : "";
+            const name = review.name || "Anonymous";
+            const initial = name.trim().charAt(0).toUpperCase() || "?";
+            const colorIndex = name.charCodeAt(0) % AVATAR_COLORS.length;
+            const avatarColor = AVATAR_COLORS[colorIndex] || AVATAR_COLORS[0];
 
             return `
                 <article class="review-card reveal-scale">
+                    <div class="review-card-top">
+                        <span class="review-avatar" style="background:${avatarColor}">${escapeHtml(initial)}</span>
+                        <div class="review-author">
+                            <strong>${escapeHtml(name)}</strong>
+                            <span>${escapeHtml(review.service || "")}${review.service && date ? " · " : ""}${escapeHtml(date)}</span>
+                        </div>
+                    </div>
                     <div class="review-rating">${stars}</div>
                     <p class="review-message">${escapeHtml(review.message || "")}</p>
-                    <div class="review-author">
-                        <strong>${escapeHtml(review.name || "Anonymous")}</strong>
-                        <span>${escapeHtml(review.service || "")}${review.service && date ? " · " : ""}${escapeHtml(date)}</span>
-                    </div>
                 </article>
             `;
         });
@@ -862,6 +887,7 @@ async function loadReviews() {
     } catch (error) {
         console.error("Reviews error:", error);
         showGridError(grid, loadReviews);
+        if (summaryEl) summaryEl.innerHTML = "";
     }
 }
 
@@ -1135,12 +1161,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         siteSupabaseClient
             .from("Review")
-            .insert({ name, email, service, rating, message, is_approved: false })
+            .insert({ name, email, service, rating, message, is_approved: true })
             .then(({ error }) => {
                 if (error) throw error;
                 status.className = "form-status success-message";
-                status.textContent = "Thank you! Your review has been submitted and will appear once it's been checked.";
+                status.textContent = "Thank you! Your review has been published.";
                 reviewForm.reset();
+                if (typeof loadReviews === "function") loadReviews();
             })
             .catch(error => {
                 console.error("Review submit error:", error);

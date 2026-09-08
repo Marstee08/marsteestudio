@@ -1772,6 +1772,45 @@ gap: 30px;
 margin-bottom: 55px;
 }
 
+.reviews-summary {
+display: flex;
+align-items: center;
+gap: 22px;
+margin-bottom: 30px;
+padding: 22px var(--space-lg);
+background: var(--blue-light);
+border-radius: 14px;
+}
+
+.reviews-summary:empty {
+display: none;
+}
+
+.reviews-summary-score {
+font-size: 2.4rem;
+font-weight: 800;
+color: var(--black);
+line-height: 1;
+}
+
+.reviews-summary-detail {
+display: flex;
+flex-direction: column;
+gap: 4px;
+}
+
+.reviews-summary-stars {
+color: var(--blue);
+letter-spacing: 0.08em;
+font-size: var(--fs-lg);
+}
+
+.reviews-summary-detail span {
+color: var(--muted);
+font-size: var(--fs-sm);
+font-weight: 600;
+}
+
 .reviews-grid {
 display: grid;
 grid-template-columns: repeat(3, 1fr);
@@ -1781,7 +1820,34 @@ gap: 25px;
 .review-card {
 padding: var(--space-lg);
 border: 1px solid var(--border);
+border-radius: 14px;
 background: var(--white);
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.review-card:hover {
+transform: translateY(-6px);
+box-shadow: var(--shadow-card-hover, 0 24px 48px -20px rgba(8, 17, 31, 0.25));
+}
+
+.review-card-top {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
+}
+
+.review-avatar {
+flex: 0 0 44px;
+width: 44px;
+height: 44px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #fff;
+font-weight: 800;
+font-size: var(--fs-base);
 }
 
 .review-rating {
@@ -1791,13 +1857,8 @@ font-size: var(--fs-sm);
 }
 
 .review-message {
-margin: 25px 0;
+margin: 14px 0 0;
 font-size: var(--fs-base);
-}
-
-.review-author {
-padding-top: 18px;
-border-top: 1px solid var(--border);
 }
 
 .review-author strong,
@@ -1813,7 +1874,7 @@ color: var(--black);
 .review-author span {
 font-size: var(--fs-xs);
 color: var(--muted);
-margin-top: 3px;
+margin-top: 2px;
 }
 
 .reviews-empty {
@@ -2191,8 +2252,8 @@ height: 38px;
 display: flex;
 align-items: center;
 justify-content: center;
-background: var(--blue-light);
-color: var(--blue);
+background: color-mix(in srgb, var(--icon-brand, var(--blue)) 16%, transparent);
+color: var(--icon-brand, var(--blue));
 font-size: var(--fs-2xs);
 font-weight: 800;
 }
@@ -2403,6 +2464,17 @@ transition: 0.3s ease;
 color: var(--blue);
 }
 
+.footer-social-row .social-icon {
+width: 38px;
+height: 38px;
+flex: 0 0 38px;
+border-radius: 50%;
+}
+
+.footer-social-row .social-icon-svg svg {
+width: 16px;
+height: 16px;
+}
 .footer-bottom {
 display: flex;
 align-items: center;
@@ -5276,9 +5348,25 @@ html.dark-theme .catalogue-custom-box p {
 
 /* Social icons — shared across the site */
 .social-link {
-display:flex !important;
-align-items:center;
-gap:9px;
+display: inline-flex !important;
+align-items: center;
+justify-content: center;
+gap: 0;
+}
+
+.footer-social-row {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+}
+
+.footer-social-row .social-link .footer-social-label {
+position: absolute;
+width: 1px;
+height: 1px;
+overflow: hidden;
+clip: rect(0 0 0 0);
+white-space: nowrap;
 }
 
 .social-icon {
@@ -5291,8 +5379,8 @@ flex:0 0 24px;
 font-size: var(--fs-2xs);
 font-weight:800;
 letter-spacing:0;
-color:var(--blue);
-background:var(--blue-light);
+color: var(--icon-brand, var(--blue));
+background: color-mix(in srgb, var(--icon-brand, var(--blue)) 16%, transparent);
 }
 
 .social-icon-svg svg {
@@ -5311,10 +5399,11 @@ display:block;
 transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
 }
 
-/* Brand-color reveal on hover — the color itself comes from
-   --icon-brand, set per-icon by applyBrandIcons() in script.js
-   based on each icon's own label, so this rule works for every
-   platform without a separate class per icon. */
+/* Icons already show their real brand color by default (set via
+   --icon-brand, per-icon, by applyBrandIcons() in script.js based
+   on each icon's own label). Hover just adds a bit of extra life -
+   a deeper tint and a small playful tilt - it doesn't introduce
+   the color, since that's already there. */
 
 .social-link,
 .contact-method-icon {
@@ -5323,8 +5412,7 @@ transition: 0.3s ease;
 
 .social-link:hover .social-icon,
 .contact-method:hover .contact-method-icon {
-background: color-mix(in srgb, var(--icon-brand, var(--blue)) 16%, transparent);
-color: var(--icon-brand, var(--blue));
+background: color-mix(in srgb, var(--icon-brand, var(--blue)) 28%, transparent);
 }
 
 .social-link:hover .social-icon-svg svg,
@@ -5778,6 +5866,14 @@ html.dark-theme .catalogue-note {
 
 html.dark-theme .catalogue-note p {
     color: #d7dee8 !important;
+}
+
+html.dark-theme .reviews-summary {
+    background: rgba(20, 105, 255, 0.1) !important;
+}
+
+html.dark-theme .reviews-summary-score {
+    color: #f5f7fb !important;
 }
 
 .watch-demo-btn {
@@ -6929,4 +7025,339 @@ html.dark-theme .blog-post-body ol {
 
 html.dark-theme .blog-post-cta {
     background: rgba(20, 105, 255, 0.1) !important;
+}
+
+
+/* =========================================================
+   BLOG - LUXURY UPGRADE PASS
+   Featured post hero, category filters, reveal-on-scroll,
+   reading progress bar, related posts, share buttons.
+   ========================================================= */
+
+/* Featured post (first/most recent post gets a large treatment) */
+
+.blog-featured {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    margin-bottom: 60px;
+    padding-bottom: 50px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp 0.7s ease both;
+}
+
+.blog-featured-cover {
+    height: 320px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.blog-featured-cover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.15), transparent 45%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1), transparent 40%);
+}
+
+.blog-featured-cover svg {
+    width: 72px;
+    height: 72px;
+    stroke: #fff;
+    stroke-width: 1.4;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+
+.blog-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--blue);
+    color: #fff;
+    font-size: var(--fs-2xs);
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+}
+
+.blog-featured-content h2 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    line-height: 1.25;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+}
+
+.blog-featured-content h2 a {
+    color: var(--black);
+}
+
+.blog-featured-content h2 a:hover {
+    color: var(--blue);
+}
+
+.blog-featured-content p {
+    color: var(--muted);
+    font-size: var(--fs-base);
+    line-height: 1.75;
+    margin: 0 0 20px;
+}
+
+/* Category filter tabs (matches catalogue's filter pattern) */
+
+.blog-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 36px;
+}
+
+.blog-filter-btn {
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--text);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.blog-filter-btn:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+}
+
+.blog-filter-btn.is-active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+}
+
+.blog-card.is-hidden {
+    display: none;
+}
+
+/* Reveal-on-scroll (self-contained, blog-only namespace) */
+
+.blog-reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.blog-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .blog-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* Reading progress bar */
+
+.blog-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--blue), #7db3ff);
+    z-index: 100000;
+    transition: width 0.1s linear;
+}
+
+/* Author byline */
+
+.blog-byline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.blog-byline-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #fff;
+    font-size: var(--fs-sm);
+    flex-shrink: 0;
+}
+
+.blog-byline-text {
+    color: rgba(255,255,255,0.85);
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+}
+
+.blog-byline-text strong {
+    display: block;
+    color: #fff;
+}
+
+/* Share buttons */
+
+.blog-share {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 40px 0;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.blog-share-label {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--muted);
+    margin-right: 4px;
+}
+
+.blog-share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--light);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    transition: 0.2s ease;
+    text-decoration: none;
+}
+
+.blog-share-btn:hover {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.blog-share-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
+}
+
+/* Related posts */
+
+.blog-related {
+    margin-top: 60px;
+    padding-top: 45px;
+    border-top: 1px solid var(--border);
+}
+
+.blog-related h3 {
+    margin: 0 0 24px;
+    font-size: var(--fs-xl);
+}
+
+.blog-related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.blog-related-card {
+    display: block;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: 0.2s ease;
+}
+
+.blog-related-card:hover {
+    border-color: var(--blue);
+    transform: translateY(-3px);
+}
+
+.blog-related-card .blog-category {
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.blog-related-card h4 {
+    margin: 8px 0 0;
+    font-size: var(--fs-base);
+    color: var(--black);
+    line-height: 1.4;
+}
+
+/* Dark theme */
+
+html.dark-theme .blog-filter-btn {
+    background: #0e1524 !important;
+    border-color: #2a3850 !important;
+    color: #d7dee8 !important;
+}
+
+html.dark-theme .blog-filter-btn.is-active {
+    background: var(--blue) !important;
+    color: #fff !important;
+}
+
+html.dark-theme .blog-featured {
+    border-color: #2a3850 !important;
+}
+
+html.dark-theme .blog-featured-content h2 a {
+    color: #f5f7fb !important;
+}
+
+html.dark-theme .blog-featured-content p {
+    color: #aeb8c8 !important;
+}
+
+html.dark-theme .blog-share {
+    border-color: #2a3850 !important;
+}
+
+html.dark-theme .blog-share-btn {
+    background: #0e1524 !important;
+    border-color: #2a3850 !important;
+    color: #d7dee8 !important;
+}
+
+html.dark-theme .blog-related {
+    border-color: #2a3850 !important;
+}
+
+html.dark-theme .blog-related-card {
+    border-color: #2a3850 !important;
+}
+
+html.dark-theme .blog-related-card h4 {
+    color: #f5f7fb !important;
 }
