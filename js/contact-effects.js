@@ -1,6 +1,6 @@
 /* =========================================
-   REVIEWS PAGE — LUXURY PARALLAX + 3D EFFECTS
-   Same pattern as services-effects.js.
+   CONTACT PAGE — LUXURY PARALLAX + 3D EFFECTS
+   Add-on file. Does not touch script.js.
    ========================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -12,27 +12,42 @@ document.addEventListener("DOMContentLoaded", function () {
   if (reduceMotion) return;
 
 
-  /* ---- 1. HERO — cinematic parallax ---- */
+  /* -----------------------------------------
+     1. HERO — cinematic parallax
+     ----------------------------------------- */
 
   const heroContent = document.querySelector(".page-hero .container");
 
-  // NOTE: this used to fade/scale/translate the hero content on scroll,
-  // but on a page-hero (much shorter than a full-viewport hero) the fade
-  // formula hit opacity 0 well before the section itself scrolled out of
-  // view - leaving a large blank box where the now-invisible heading/text
-  // still occupied its layout space. Removed the scroll-linked fade;
-  // the hero now just stays visible normally.
   function updateHero() {
     if (!heroContent) return;
-    heroContent.style.translate = "";
-    heroContent.style.scale = "";
-    heroContent.style.opacity = "";
+    const scrollY = window.scrollY;
+    const offset = Math.min(scrollY * 0.55, 320);
+    const scale = Math.max(1 - scrollY / 2200, 0.9);
+    const opacity = Math.max(1 - scrollY / 500, 0);
+    heroContent.style.translate = `0 ${offset}px`;
+    heroContent.style.scale = `${scale}`;
+    heroContent.style.opacity = opacity;
   }
 
+  let ticking = false;
+
+  function onScroll() {
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        updateHero();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
   updateHero();
 
 
-  /* ---- 2. SELF-CONTAINED SCROLL REVEALS ---- */
+  /* -----------------------------------------
+     2. SELF-CONTAINED SCROLL REVEALS
+     ----------------------------------------- */
 
   function revealOnScroll(selector, className, options) {
 
@@ -62,18 +77,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  revealOnScroll(".trust-box", "section-reveal");
-  revealOnScroll(".reviews-heading", "section-reveal");
-  revealOnScroll(".reviews-grid", "section-reveal");
-  revealOnScroll(".reviews-empty", "section-reveal");
-  revealOnScroll(".guidelines-grid", "section-reveal");
-  revealOnScroll(".review-form-card", "section-reveal");
-  revealOnScroll(".reviews-cta .simple-cta", "section-reveal");
+  revealOnScroll(".contact-info", "section-reveal");
+  revealOnScroll(".contact-methods", "section-reveal");
+  revealOnScroll(".contact-form-card", "section-reveal");
+  revealOnScroll(".availability-box", "section-reveal");
+  revealOnScroll(".contact-cta .simple-cta", "section-reveal");
+
+  document.querySelectorAll(".contact-step").forEach(function (step) {
+    revealOnScroll(".contact-step", "step-reveal", {
+      threshold: 0.2,
+      rootMargin: "0px 0px -50px 0px"
+    });
+  });
 
 
-  /* ---- 3. CURSOR GLARE — guideline cards ---- */
+  /* -----------------------------------------
+     3. CURSOR GLARE — contact methods
+     ----------------------------------------- */
 
-  document.querySelectorAll(".guideline-card").forEach(function (item) {
+  document.querySelectorAll(".contact-method").forEach(function (item) {
     item.addEventListener("mousemove", function (e) {
       const rect = item.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -84,9 +106,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
 
-  /* ---- 4. FORM CARD — gentle floating tilt toward cursor ---- */
+  /* -----------------------------------------
+     4. FORM CARD — gentle floating tilt toward
+        cursor (kept subtle so the form stays
+        comfortable to use), plus glare highlight
+     ----------------------------------------- */
 
-  const formCard = document.querySelector(".review-form-card");
+  const formCard = document.querySelector(".contact-form-card");
 
   if (formCard) {
     formCard.addEventListener("mousemove", function (e) {

@@ -16,30 +16,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const heroContent = document.querySelector(".page-hero .container");
 
+  // NOTE: this used to fade/scale/translate the hero content on scroll,
+  // but on a page-hero (much shorter than a full-viewport hero) the fade
+  // formula hit opacity 0 well before the section itself scrolled out of
+  // view - leaving a large blank box where the now-invisible heading/text
+  // still occupied its layout space. Removed the scroll-linked fade;
+  // the hero now just stays visible normally.
   function updateHero() {
     if (!heroContent) return;
-    const scrollY = window.scrollY;
-    const offset = Math.min(scrollY * 0.55, 320);
-    const scale = Math.max(1 - scrollY / 2200, 0.9);
-    const opacity = Math.max(1 - scrollY / 500, 0);
-    heroContent.style.translate = `0 ${offset}px`;
-    heroContent.style.scale = `${scale}`;
-    heroContent.style.opacity = opacity;
+    heroContent.style.translate = "";
+    heroContent.style.scale = "";
+    heroContent.style.opacity = "";
   }
 
-  let ticking = false;
-
-  function onScroll() {
-    if (!ticking) {
-      window.requestAnimationFrame(function () {
-        updateHero();
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }
-
-  window.addEventListener("scroll", onScroll, { passive: true });
   updateHero();
 
 
