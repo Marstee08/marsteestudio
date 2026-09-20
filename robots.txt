@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /checkout.html
 
-Sitemap: https://marstee08.github.io/marsteestudio/sitemap.xml
+Sitemap: https://marsteestudio.vercel.app/sitemap.xml

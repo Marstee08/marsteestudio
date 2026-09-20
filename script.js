@@ -9,6 +9,74 @@ const SUPABASE_URL = "https://iggffzkopskzzemuksay.supabase.co";
 const SUPABASE_KEY = "sb_publishable_hWSTRRLII9wFAZY6vWreUw_1-2oqf6-";
 const PRODUCT_BUCKET = "product-image";
 
+
+/* =========================================================
+   CART
+   A simple localStorage-based cart. Every product can be
+   added to cart AND has a "Chat on WhatsApp" option - the two
+   are not mutually exclusive; the cart is for people who want
+   to check out directly, WhatsApp is for anyone with a
+   question first or who'd rather order that way.
+   ========================================================= */
+
+const CART_KEY = "mts_cart";
+
+function getCart() {
+    try {
+        return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveCart(cart) {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    updateCartBadge();
+}
+
+function addToCart(item) {
+    const cart = getCart();
+    const existing = cart.find(i => i.id === item.id);
+    if (existing) {
+        existing.qty += 1;
+    } else {
+        cart.push({ ...item, qty: 1 });
+    }
+    saveCart(cart);
+}
+
+function removeFromCart(id) {
+    saveCart(getCart().filter(i => i.id !== id));
+}
+
+function setCartQty(id, qty) {
+    const cart = getCart();
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    if (qty <= 0) {
+        removeFromCart(id);
+        return;
+    }
+    item.qty = qty;
+    saveCart(cart);
+}
+
+function getCartCount() {
+    return getCart().reduce((sum, i) => sum + i.qty, 0);
+}
+
+function getCartTotal() {
+    return getCart().reduce((sum, i) => sum + i.qty * i.price, 0);
+}
+
+function updateCartBadge() {
+    document.querySelectorAll(".cart-count").forEach(el => {
+        const count = getCartCount();
+        el.textContent = count;
+        el.classList.toggle("is-hidden", count === 0);
+    });
+}
+
 const getSiteSupabase = () => {
     if (!window.supabase || typeof window.supabase.createClient !== "function") {
         console.warn("Mars Tee Studio: Supabase client is unavailable. Dynamic content will remain in its fallback state.");
@@ -80,28 +148,148 @@ function escapeHtml(value) {
 
 /* =========================================================
    CURRENCY
-   All prices are stored/entered in Naira (NGN). These are
-   fixed conversion rates you set yourself — not live rates.
-   Update the numbers below whenever you want to adjust them.
+   Prices are entered/stored in Naira (NGN). Visitors outside
+   Nigeria see an auto-detected local-currency ESTIMATE, based
+   on their IP location and live exchange rates (refreshed once
+   a day, cached in localStorage). The actual Paystack charge
+   always happens in NGN regardless of what's displayed here -
+   checkout.html has its own note making that explicit to the
+   customer, so there's no surprise on their card statement.
+   If a visitor manually picks a currency from the dropdown,
+   that choice is remembered and auto-detection never overrides
+   it again.
    ========================================================= */
 
-const CURRENCIES = {
-    NGN: { symbol: "₦", rate: 1 },
-    USD: { symbol: "$", rate: 1 / 1600 },
-    EUR: { symbol: "€", rate: 1 / 1750 },
-    GBP: { symbol: "£", rate: 1 / 2050 }
+const CURRENCY_STORAGE_KEY = "mts_currency";
+const CURRENCY_MANUAL_KEY = "mts_currency_manual";
+const RATES_STORAGE_KEY = "mts_rates";
+const RATES_STORAGE_TIME_KEY = "mts_rates_time";
+const RATES_MAX_AGE_MS = 24 * 60 * 60 * 1000; // refresh once a day
+
+const CURRENCY_SYMBOLS = {
+    NGN: "₦", USD: "$", EUR: "€", GBP: "£", CAD: "C$", AUD: "A$",
+    ZAR: "R", KES: "KSh", GHS: "GH₵", XOF: "CFA", XAF: "FCFA",
+    EGP: "E£", MAD: "MAD", INR: "₹", JPY: "¥", CNY: "¥", AED: "AED",
+    SAR: "SAR", BRL: "R$", MXN: "MX$", CHF: "CHF", SEK: "kr", NOK: "kr",
+    DKK: "kr", PLN: "zł", TRY: "₺", SGD: "S$", NZD: "NZ$", KRW: "₩",
+    PHP: "₱", THB: "฿", VND: "₫", IDR: "Rp", PKR: "Rs", BDT: "৳",
+    UGX: "USh", TZS: "TSh", RWF: "FRw", ETB: "Br", ZMW: "ZK", HKG: "HK$"
 };
 
-const CURRENCY_STORAGE_KEY = "mts_currency";
+// Maps a visitor's detected country to the currency they'd expect to
+// see. Not exhaustive, but covers the regions most visitors come from.
+const COUNTRY_TO_CURRENCY = {
+    NG: "NGN", US: "USD", GB: "GBP", CA: "CAD", AU: "AUD", NZ: "NZD",
+    IE: "EUR", DE: "EUR", FR: "EUR", ES: "EUR", IT: "EUR", NL: "EUR",
+    PT: "EUR", BE: "EUR", AT: "EUR", FI: "EUR", GR: "EUR", LU: "EUR",
+    ZA: "ZAR", KE: "KES", GH: "GHS", CI: "XOF", SN: "XOF", BJ: "XOF",
+    TG: "XOF", CM: "XAF", GA: "XAF", TD: "XAF", EG: "EGP", MA: "MAD",
+    IN: "INR", JP: "JPY", CN: "CNY", HK: "HKG", AE: "AED", SA: "SAR",
+    BR: "BRL", MX: "MXN", CH: "CHF", SE: "SEK", NO: "NOK", DK: "DKK",
+    PL: "PLN", TR: "TRY", SG: "SGD", KR: "KRW", PH: "PHP", TH: "THB",
+    VN: "VND", ID: "IDR", PK: "PKR", BD: "BDT", UG: "UGX", TZ: "TZS",
+    RW: "RWF", ET: "ETB", ZM: "ZMW"
+};
+
+// Used only until live rates finish loading, or if the fetch fails -
+// approximate, safe fallback so a number is never wildly wrong.
+const FALLBACK_RATES = {
+    NGN: 1, USD: 1 / 1600, EUR: 1 / 1750, GBP: 1 / 2050,
+    GHS: 1 / 105, ZAR: 1 / 88, KES: 1 / 12.4
+};
+
+let liveRates = null; // populated async once the rates fetch resolves
+
+function loadCachedRates() {
+    try {
+        const cachedAt = Number(localStorage.getItem(RATES_STORAGE_TIME_KEY) || 0);
+        if (Date.now() - cachedAt > RATES_MAX_AGE_MS) return null;
+        const cached = JSON.parse(localStorage.getItem(RATES_STORAGE_KEY) || "null");
+        return cached && typeof cached === "object" ? cached : null;
+    } catch {
+        return null;
+    }
+}
+
+async function fetchLiveRates() {
+    const cached = loadCachedRates();
+    if (cached) {
+        liveRates = cached;
+        return cached;
+    }
+    try {
+        const res = await fetch("https://open.er-api.com/v6/latest/NGN");
+        const data = await res.json();
+        if (data && data.result === "success" && data.rates) {
+            liveRates = data.rates;
+            localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(data.rates));
+            localStorage.setItem(RATES_STORAGE_TIME_KEY, String(Date.now()));
+            return data.rates;
+        }
+    } catch {
+        // Silently fall back - FALLBACK_RATES / NGN keeps the site correct.
+    }
+    return null;
+}
+
+function getRate(code) {
+    if (code === "NGN") return 1;
+    if (liveRates && liveRates[code]) return liveRates[code];
+    if (FALLBACK_RATES[code]) return FALLBACK_RATES[code];
+    return null; // unsupported until live rates load - caller should show NGN
+}
 
 function getActiveCurrency() {
     const stored = localStorage.getItem(CURRENCY_STORAGE_KEY);
-    return CURRENCIES[stored] ? stored : "NGN";
+    return stored && CURRENCY_SYMBOLS[stored] ? stored : "NGN";
+}
+
+function setActiveCurrency(code, manual) {
+    localStorage.setItem(CURRENCY_STORAGE_KEY, code);
+    if (manual) localStorage.setItem(CURRENCY_MANUAL_KEY, "true");
+    refreshDisplayedPrices();
+    const select = document.querySelector(".currency-switcher");
+    if (select) select.value = getActiveCurrency();
+}
+
+let cachedGeoCountry = null;
+let geoFetchPromise = null;
+
+function fetchVisitorCountry() {
+    if (geoFetchPromise) return geoFetchPromise;
+    geoFetchPromise = (async () => {
+        try {
+            const res = await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en");
+            const data = await res.json();
+            cachedGeoCountry = data && data.countryCode ? data.countryCode : null;
+        } catch {
+            cachedGeoCountry = null; // detection is a nice-to-have, never breaks the site
+        }
+        return cachedGeoCountry;
+    })();
+    return geoFetchPromise;
+}
+
+async function autoDetectCurrency() {
+    if (localStorage.getItem(CURRENCY_MANUAL_KEY) === "true") return; // user already chose
+    const country = await fetchVisitorCountry();
+    const code = country ? COUNTRY_TO_CURRENCY[country] : null;
+    if (code && code !== "NGN") {
+        await fetchLiveRates();
+        if (getRate(code)) setActiveCurrency(code, false);
+    }
 }
 
 function formatPrice(ngnAmount) {
     const currencyCode = getActiveCurrency();
-    const { symbol, rate } = CURRENCIES[currencyCode];
+    const rate = getRate(currencyCode);
+    if (!rate) return formatPriceIn("NGN", ngnAmount);
+    return formatPriceIn(currencyCode, ngnAmount, rate);
+}
+
+function formatPriceIn(currencyCode, ngnAmount, rateOverride) {
+    const rate = rateOverride || getRate(currencyCode) || 1;
+    const symbol = CURRENCY_SYMBOLS[currencyCode] || "";
     const converted = Number(ngnAmount) * rate;
     const decimals = currencyCode === "NGN" ? 0 : 2;
     return `${symbol}${converted.toLocaleString(undefined, {
@@ -127,18 +315,17 @@ function setupCurrencySwitcher() {
     select.className = "currency-switcher";
     select.setAttribute("aria-label", "Choose currency");
 
-    Object.keys(CURRENCIES).forEach(code => {
+    Object.keys(CURRENCY_SYMBOLS).forEach(code => {
         const option = document.createElement("option");
         option.value = code;
-        option.textContent = `${CURRENCIES[code].symbol} ${code}`;
+        option.textContent = `${CURRENCY_SYMBOLS[code]} ${code}`;
         select.appendChild(option);
     });
 
     select.value = getActiveCurrency();
 
     select.addEventListener("change", () => {
-        localStorage.setItem(CURRENCY_STORAGE_KEY, select.value);
-        refreshDisplayedPrices();
+        setActiveCurrency(select.value, true);
     });
 
     const themeToggle = nav.querySelector(".theme-toggle");
@@ -149,7 +336,297 @@ function setupCurrencySwitcher() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", setupCurrencySwitcher);
+/* =========================================================
+   LANGUAGE
+   English lives directly in the HTML (no en.json needed).
+   Other languages are loaded from lang/<code>.json on demand
+   and applied to every [data-i18n] (plain text) or
+   [data-i18n-html] (preserves inner markup, e.g. a highlighted
+   <span> inside a heading) element. Country auto-detection
+   reuses the same geolocation lookup as currency detection
+   (one fetch, not two). A manual pick from the switcher always
+   wins over auto-detection from then on, same pattern as
+   currency.
+   ========================================================= */
+
+const LANGUAGE_STORAGE_KEY = "mts_lang";
+const LANGUAGE_MANUAL_KEY = "mts_lang_manual";
+const LANGUAGE_LABELS = { en: "English", fr: "Français", es: "Español", pt: "Português", zh: "中文" };
+
+const COUNTRY_TO_LANGUAGE = {
+    FR: "fr", CI: "fr", SN: "fr", BJ: "fr", TG: "fr", CM: "fr", GA: "fr", TD: "fr",
+    BF: "fr", ML: "fr", NE: "fr", GN: "fr", CD: "fr", CG: "fr", MG: "fr", LU: "fr",
+    ES: "es", MX: "es", AR: "es", CO: "es", CL: "es", PE: "es", VE: "es", EC: "es",
+    GT: "es", CU: "es", BO: "es", DO: "es", HN: "es", PY: "es", SV: "es", NI: "es",
+    CR: "es", PA: "es", UY: "es", GQ: "es",
+    PT: "pt", BR: "pt", AO: "pt", MZ: "pt", GW: "pt", CV: "pt", ST: "pt",
+    CN: "zh", HK: "zh", TW: "zh", MO: "zh"
+};
+
+let translationsCache = {};
+
+async function loadTranslations(lang) {
+    if (lang === "en") return null;
+    if (translationsCache[lang]) return translationsCache[lang];
+    try {
+        const res = await fetch(`lang/${lang}.json`);
+        const data = await res.json();
+        translationsCache[lang] = data;
+        return data;
+    } catch {
+        return null;
+    }
+}
+
+function getActiveLanguage() {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return LANGUAGE_LABELS[stored] ? stored : "en";
+}
+
+function applyTranslations(lang, dict) {
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        if (el.dataset.i18nOriginal === undefined) el.dataset.i18nOriginal = el.textContent;
+        el.textContent = (lang !== "en" && dict && dict[el.dataset.i18n]) || el.dataset.i18nOriginal;
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(el => {
+        if (el.dataset.i18nOriginal === undefined) el.dataset.i18nOriginal = el.innerHTML;
+        el.innerHTML = (lang !== "en" && dict && dict[el.dataset.i18nHtml]) || el.dataset.i18nOriginal;
+    });
+}
+
+async function setLanguage(lang, manual) {
+    if (!LANGUAGE_LABELS[lang]) return;
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    if (manual) localStorage.setItem(LANGUAGE_MANUAL_KEY, "true");
+    const dict = await loadTranslations(lang);
+    applyTranslations(lang, dict);
+    const select = document.querySelector(".language-switcher");
+    if (select) select.value = lang;
+}
+
+function setupLanguageSwitcher() {
+    const nav = document.querySelector(".main-nav");
+    if (!nav || nav.querySelector(".language-switcher")) return;
+
+    const select = document.createElement("select");
+    select.className = "language-switcher";
+    select.setAttribute("aria-label", "Choose language");
+
+    Object.keys(LANGUAGE_LABELS).forEach(code => {
+        const option = document.createElement("option");
+        option.value = code;
+        option.textContent = LANGUAGE_LABELS[code];
+        select.appendChild(option);
+    });
+
+    select.value = getActiveLanguage();
+
+    select.addEventListener("change", () => {
+        setLanguage(select.value, true);
+    });
+
+    const themeToggle = nav.querySelector(".theme-toggle");
+    if (themeToggle) {
+        nav.insertBefore(select, themeToggle);
+    } else {
+        nav.appendChild(select);
+    }
+}
+
+async function autoDetectLanguage() {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored && LANGUAGE_LABELS[stored]) {
+        // Apply whatever was already chosen/detected on a previous visit.
+        if (stored !== "en") await setLanguage(stored, false);
+        return;
+    }
+    if (localStorage.getItem(LANGUAGE_MANUAL_KEY) === "true") return;
+
+    const country = await fetchVisitorCountry();
+    const lang = country ? COUNTRY_TO_LANGUAGE[country] : null;
+    if (lang) await setLanguage(lang, false);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupCurrencySwitcher();
+    setupLanguageSwitcher();
+    autoDetectCurrency();
+    autoDetectLanguage();
+});
+
+/* ---- Cart icon (injected into nav, same pattern as currency switcher) ---- */
+
+function setupCartIcon() {
+    const nav = document.querySelector(".main-nav");
+    if (!nav || nav.querySelector(".cart-icon-btn")) return;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cart-icon-btn";
+    btn.setAttribute("aria-label", "View cart");
+    btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.6 13.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6L23 6H6"/>
+        </svg>
+        <span class="cart-count is-hidden">0</span>
+    `;
+    btn.addEventListener("click", () => setupCartDrawer(true));
+
+    const themeToggle = nav.querySelector(".theme-toggle");
+    if (themeToggle) {
+        nav.insertBefore(btn, themeToggle);
+    } else {
+        nav.appendChild(btn);
+    }
+    updateCartBadge();
+}
+
+document.addEventListener("DOMContentLoaded", setupCartIcon);
+
+/* ---- Account icon (injected into nav, same pattern as cart/currency) ---- */
+
+function setupAccountIcon() {
+    const nav = document.querySelector(".main-nav");
+    if (!nav || nav.querySelector(".account-icon-btn") || window.location.pathname.endsWith("account.html")) return;
+
+    const link = document.createElement("a");
+    link.href = "account.html";
+    link.className = "account-icon-btn";
+    link.setAttribute("aria-label", "My account");
+    link.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/>
+        </svg>
+    `;
+
+    const themeToggle = nav.querySelector(".theme-toggle");
+    if (themeToggle) {
+        nav.insertBefore(link, themeToggle);
+    } else {
+        nav.appendChild(link);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", setupAccountIcon);
+
+/* ---- Cart drawer ---- */
+
+function renderCartDrawerContents() {
+    const body = document.querySelector(".cart-drawer-body");
+    const footer = document.querySelector(".cart-drawer-footer");
+    if (!body || !footer) return;
+
+    const cart = getCart();
+
+    if (!cart.length) {
+        body.innerHTML = `<p class="cart-empty">Your cart is empty.</p>`;
+        footer.innerHTML = "";
+        return;
+    }
+
+    body.innerHTML = cart.map(item => `
+        <div class="cart-item" data-id="${item.id}">
+            <div class="cart-item-image">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : ""}</div>
+            <div class="cart-item-info">
+                <strong>${escapeHtml(item.name)}</strong>
+                <span>${formatPrice(item.price)}</span>
+                <div class="cart-item-qty">
+                    <button type="button" class="cart-qty-btn" data-action="decrease">&minus;</button>
+                    <span>${item.qty}</span>
+                    <button type="button" class="cart-qty-btn" data-action="increase">+</button>
+                </div>
+            </div>
+            <button type="button" class="cart-item-remove" aria-label="Remove">&times;</button>
+        </div>
+    `).join("");
+
+    footer.innerHTML = `
+        <div class="cart-total-row">
+            <span>Total</span>
+            <strong>${formatPrice(getCartTotal())}</strong>
+        </div>
+        <button type="button" class="button button-primary cart-checkout-btn">Checkout →</button>
+    `;
+}
+
+function setupCartDrawer(forceOpen) {
+    let drawer = document.querySelector(".cart-drawer");
+
+    if (!drawer) {
+        drawer = document.createElement("div");
+        drawer.className = "cart-drawer hidden";
+        drawer.innerHTML = `
+            <div class="cart-drawer-backdrop"></div>
+            <div class="cart-drawer-panel">
+                <div class="cart-drawer-header">
+                    <h3>Your Cart</h3>
+                    <button type="button" class="cart-drawer-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="cart-drawer-body"></div>
+                <div class="cart-drawer-footer"></div>
+            </div>
+        `;
+        document.body.appendChild(drawer);
+
+        drawer.querySelector(".cart-drawer-backdrop").addEventListener("click", () => drawer.classList.add("hidden"));
+        drawer.querySelector(".cart-drawer-close").addEventListener("click", () => drawer.classList.add("hidden"));
+
+        drawer.addEventListener("click", event => {
+            const item = event.target.closest(".cart-item");
+            if (!item) return;
+            const id = item.dataset.id;
+
+            if (event.target.closest(".cart-item-remove")) {
+                removeFromCart(id);
+                renderCartDrawerContents();
+            } else if (event.target.closest("[data-action='increase']")) {
+                const cart = getCart();
+                const found = cart.find(i => i.id === id);
+                if (found) setCartQty(id, found.qty + 1);
+                renderCartDrawerContents();
+            } else if (event.target.closest("[data-action='decrease']")) {
+                const cart = getCart();
+                const found = cart.find(i => i.id === id);
+                if (found) setCartQty(id, found.qty - 1);
+                renderCartDrawerContents();
+            }
+        });
+
+        drawer.addEventListener("click", event => {
+            if (event.target.closest(".cart-checkout-btn")) {
+                window.location.href = "checkout.html";
+            }
+        });
+    }
+
+    renderCartDrawerContents();
+
+    if (forceOpen) {
+        drawer.classList.remove("hidden");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => setupCartDrawer(false));
+
+document.addEventListener("click", event => {
+    const btn = event.target.closest(".add-to-cart-btn");
+    if (!btn) return;
+    addToCart({
+        id: btn.dataset.id,
+        name: btn.dataset.name,
+        price: Number(btn.dataset.price) || 0,
+        image: btn.dataset.image || ""
+    });
+    const originalText = btn.textContent;
+    btn.textContent = "Added ✓";
+    btn.disabled = true;
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }, 1400);
+});
 
 /* =========================================================
    BRAND ICONS
@@ -374,6 +851,67 @@ function setupSitePreviewModal() {
     });
 }
 
+/* =========================================================
+   PRODUCT DETAIL MODAL
+   Tapping a catalogue card (anywhere except its buttons/links)
+   opens a modal with the full product details. This is what
+   lets card content stay compact on mobile - the full
+   description isn't lost, it just moved into this view.
+   ========================================================= */
+
+function setupProductDetailModal() {
+    if (document.querySelector(".product-detail-modal")) return;
+
+    const modal = document.createElement("div");
+    modal.className = "product-detail-modal hidden";
+    modal.innerHTML = `
+        <div class="product-detail-backdrop"></div>
+        <div class="product-detail-content">
+            <button type="button" class="product-detail-close" aria-label="Close">&times;</button>
+            <div class="product-detail-image"></div>
+            <div class="product-detail-body">
+                <span class="product-detail-type"></span>
+                <h3 class="product-detail-name"></h3>
+                <strong class="product-detail-price"></strong>
+                <p class="product-detail-description"></p>
+                <div class="product-detail-actions"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    function closeModal() {
+        modal.classList.add("hidden");
+    }
+
+    modal.querySelector(".product-detail-backdrop").addEventListener("click", closeModal);
+    modal.querySelector(".product-detail-close").addEventListener("click", closeModal);
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeModal();
+    });
+
+    document.addEventListener("click", event => {
+        if (event.target.closest("a, button")) return;
+        const card = event.target.closest(".catalogue-card");
+        if (!card) return;
+
+        const image = card.dataset.detailImage;
+        modal.querySelector(".product-detail-image").innerHTML = image
+            ? `<img src="${image}" alt="${card.dataset.detailName || ""}">`
+            : "";
+        modal.querySelector(".product-detail-type").textContent = card.dataset.detailType || "";
+        modal.querySelector(".product-detail-name").textContent = card.dataset.detailName || "";
+        modal.querySelector(".product-detail-price").textContent = card.dataset.detailPrice || "";
+        modal.querySelector(".product-detail-description").textContent = card.dataset.detailDescription || "";
+
+        const actionsSource = card.querySelector(".catalogue-card-actions");
+        const actionsTarget = modal.querySelector(".product-detail-actions");
+        actionsTarget.innerHTML = actionsSource ? actionsSource.innerHTML : "";
+
+        modal.classList.remove("hidden");
+    });
+}
+
 document.addEventListener("DOMContentLoaded", setupSitePreviewModal);
 
 /* =========================================================
@@ -558,8 +1096,7 @@ function getProductCategory(product) {
     const type = String(product.project_type || "").toLowerCase();
 
     if (type === "website") return "web";
-    if (type === "digital") return "digital";
-    return "graphics";
+    return "digital";
 }
 
 function getProductTier(product) {
@@ -579,16 +1116,14 @@ function getProductTier(product) {
 
 const TIER_PRICING = {
     web: { basic: 60000, standard: 130000, premium: 300000, luxury: 750000 },
-    digital: { basic: 15000, standard: 30000, premium: 60000, luxury: 150000 },
-    graphics: { basic: 10000, standard: 30000 }
+    digital: { basic: 15000, standard: 30000, premium: 60000, luxury: 150000 }
 };
 
 // Some tiers are genuinely priced as ranges/open-ended rather than
 // a flat number - those show "From ₦X" using the floor of the range.
 const FROM_PRICE_TIERS = {
     web: { luxury: true },
-    digital: { basic: true, standard: true, premium: true, luxury: true },
-    graphics: {}
+    digital: { basic: true, standard: true, premium: true, luxury: true }
 };
 
 function getTierPrice(category, tier) {
@@ -619,6 +1154,9 @@ async function loadCatalogueProducts() {
     const grid = document.querySelector(".catalogue-grid");
     if (!grid || !siteSupabaseClient) return;
 
+    const showAll = new URLSearchParams(location.search).get("view") === "all";
+    const PREVIEW_COUNT = 6;
+
     showGridLoading(grid, 3);
 
     try {
@@ -634,12 +1172,19 @@ async function loadCatalogueProducts() {
             return;
         }
 
-        const products = await Promise.all(data.map(async product => {
+        const controls = document.querySelectorAll(".catalogue-controls, .catalogue-package-filter");
+        const visibleData = showAll ? data : data.slice(0, PREVIEW_COUNT);
+
+        if (!showAll) {
+            controls.forEach(el => el.style.display = "none");
+        }
+
+        const products = await Promise.all(visibleData.map(async product => {
             const image = await getProductImage(
                 product.Image_url || product.front_image_url || ""
             );
 
-            const type = String(product.project_type || "Graphic Design");
+            const type = String(product.project_type || "Custom Service");
             const category = getProductCategory(product);
             const tier = getProductTier(product);
             const fixedPrice = getTierPrice(category, tier);
@@ -657,6 +1202,9 @@ async function loadCatalogueProducts() {
                 demoButton = `<button type="button" class="button button-secondary view-live-btn" data-url="${escapeHtml(liveUrl)}">View Live Demo ↗</button>`;
             }
 
+            const productName = product.Name || "Untitled Service";
+            const whatsappMessage = encodeURIComponent(`Hi Mars Tee Studio, I'd like to ask about "${productName}".`);
+
             return `
                 <article
                     class="catalogue-card reveal-scale"
@@ -665,17 +1213,23 @@ async function loadCatalogueProducts() {
                     data-price="${Number.isFinite(price) ? price : 0}"
                     data-featured="${product.is_featured ? "true" : "false"}"
                     data-rating="${Number(product.rating) || 0}"
+                    data-detail-name="${escapeHtml(productName)}"
+                    data-detail-description="${escapeHtml(product.Description || "")}"
+                    data-detail-image="${escapeHtml(image || "")}"
+                    data-detail-type="${escapeHtml(type.toUpperCase())}"
+                    data-detail-price="${priceHasValue ? `${pricePrefix}${formatPrice(price)}` : ""}"
                 >                    <div class="catalogue-image">
-                        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.Name || "Product")}" loading="lazy">` : ""}
+                        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(productName)}" loading="lazy">` : ""}
                     </div>
                     <div class="catalogue-info">
                         <span class="section-label">${escapeHtml(type.toUpperCase())}</span>
-                        <h3>${escapeHtml(product.Name || "Untitled Service")}</h3>
+                        <h3>${escapeHtml(productName)}</h3>
                         <p>${escapeHtml(product.Description || "")}</p>
                         ${priceHasValue ? `<strong class="price-display" data-price-ngn="${price}" data-price-prefix="${pricePrefix}">${pricePrefix}${formatPrice(price)}</strong>` : ""}
                         <div class="catalogue-card-actions">
                             ${demoButton}
-                            <a href="contact.html" class="button button-primary">Order Now →</a>
+                            ${priceHasValue ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(productName)}" data-price="${price}" data-image="${escapeHtml(image || "")}">Add to Cart</button>` : ""}
+                            <a href="https://wa.me/2349124147362?text=${whatsappMessage}" target="_blank" rel="noopener" class="button button-secondary cart-chat-btn">Chat on WhatsApp</a>
                         </div>
                     </div>
                 </article>
@@ -684,7 +1238,17 @@ async function loadCatalogueProducts() {
 
         grid.innerHTML = products.join("");
         observeReveal([...grid.querySelectorAll(".catalogue-card")]);
+
+        if (!showAll && data.length > PREVIEW_COUNT) {
+            grid.insertAdjacentHTML("afterend", `
+                <div class="see-more-wrap">
+                    <a href="catalogue.html?view=all" class="button button-secondary">See More Products →</a>
+                </div>
+            `);
+        }
+
         initialiseCatalogueControls();
+        setupProductDetailModal();
 
     } catch (error) {
         console.error("Catalogue error:", error);
@@ -702,28 +1266,6 @@ function initialiseCatalogueControls() {
 
     let activeCategory = "all";
     let activeTier = "all";
-
-    // Graphics (flyer/label/nylon branding) only ever offers
-    // Basic and Standard — Premium and Luxury are not Graphics packages.
-    function updateTierAvailability() {
-        const restrictedTiers = ["premium", "luxury"];
-        const restrictedButtons = [...tierButtons].filter(
-            button => restrictedTiers.includes((button.dataset.tier || "").toLowerCase())
-        );
-        if (!restrictedButtons.length) return;
-
-        const graphicsActive = activeCategory === "graphics";
-        restrictedButtons.forEach(button => { button.hidden = graphicsActive; });
-
-        if (graphicsActive && restrictedTiers.includes(activeTier.toLowerCase())) {
-            tierButtons.forEach(item => item.classList.remove("active"));
-            const allTierButton = [...tierButtons].find(
-                button => (button.dataset.tier || "all") === "all"
-            );
-            allTierButton?.classList.add("active");
-            activeTier = "all";
-        }
-    }
 
     function applyFilters() {
         const cards = [...grid.querySelectorAll(".catalogue-card")];
@@ -751,12 +1293,10 @@ function initialiseCatalogueControls() {
             const map = {
                 "all": "all",
                 "Websites": "web",
-                "Graphics": "graphics",
                 "Digital Experiences": "digital"
             };
 
             activeCategory = map[value] || "all";
-            updateTierAvailability();
             applyFilters();
         });
     });
@@ -791,7 +1331,6 @@ function initialiseCatalogueControls() {
         applyFilters();
     });
 
-    updateTierAvailability();
     applyFilters();
 }
 
@@ -897,6 +1436,9 @@ async function loadPortfolioProducts() {
     const grid = document.querySelector(".portfolio-grid");
     if (!grid || !siteSupabaseClient) return;
 
+    const showAll = new URLSearchParams(location.search).get("view") === "all";
+    const PREVIEW_COUNT = 6;
+
     showGridLoading(grid, 3);
 
     try {
@@ -911,7 +1453,14 @@ async function loadPortfolioProducts() {
             return;
         }
 
-        const products = await Promise.all(data.map(async product => {
+        const portfolioFilterRow = document.querySelector(".portfolio-filters");
+        const visibleData = showAll ? data : data.slice(0, PREVIEW_COUNT);
+
+        if (!showAll && portfolioFilterRow) {
+            portfolioFilterRow.style.display = "none";
+        }
+
+        const products = await Promise.all(visibleData.map(async product => {
             const image = await getPortfolioImage(
                 product.Image_url || product.front_image_url || ""
             );
@@ -920,8 +1469,7 @@ async function loadPortfolioProducts() {
             const category = getProductCategory(product);
             const labels = {
                 web: "WEB DEVELOPMENT",
-                digital: "DIGITAL EXPERIENCE",
-                graphics: "GRAPHIC DESIGN"
+                digital: "DIGITAL EXPERIENCE"
             };
 
             const demoVideoUrl = product.demo_video_url || "";
@@ -946,7 +1494,16 @@ async function loadPortfolioProducts() {
 
         grid.innerHTML = products.join("");
         observeReveal([...grid.querySelectorAll(".portfolio-card")]);
-        setupPortfolioFilters();
+
+        if (!showAll && data.length > PREVIEW_COUNT) {
+            grid.insertAdjacentHTML("afterend", `
+                <div class="see-more-wrap">
+                    <a href="portfolio.html?view=all" class="button button-secondary">See More Work →</a>
+                </div>
+            `);
+        } else {
+            setupPortfolioFilters();
+        }
     } catch (error) {
         console.error("Portfolio error:", error);
         showGridError(grid, loadPortfolioProducts);

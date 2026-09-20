@@ -3,26 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="A clear-eyed comparison of our four website package tiers, so you can pick based on what you need - not just what sounds impressive.">
+<meta name="description" content="Complete your order with Mars Tee Studio.">
 <meta name="author" content="Mars Tee Studio">
-<title>Basic, Standard, Premium or Luxury: Which Package Do You Actually Need? | Mars Tee Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<title>Checkout | Mars Tee Studio</title>
 
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="images/favicon-32x32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="images/favicon-16x16.png" type="image/png" sizes="16x16">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Mars Tee Studio">
-<meta property="og:title" content="Basic, Standard, Premium or Luxury: Which Package Do You Actually Need? | Mars Tee Studio">
-<meta property="og:description" content="A clear-eyed comparison of our four website package tiers, so you can pick based on what you need - not just what sounds impressive.">
-<meta property="og:image" content="https://marsteestudio.vercel.app/images/og-share-image.jpg">
-<meta property="og:url" content="https://marsteestudio.vercel.app/blog-basic-standard-premium-or-luxury.html">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Basic, Standard, Premium or Luxury: Which Package Do You Actually Need? | Mars Tee Studio">
-<meta name="twitter:description" content="A clear-eyed comparison of our four website package tiers, so you can pick based on what you need - not just what sounds impressive.">
-<meta name="twitter:image" content="https://marsteestudio.vercel.app/images/og-share-image.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +36,7 @@
 <a href="catalogue.html" class="nav-link" data-i18n="nav.catalogue">Catalogue</a>
 <a href="portfolio.html" class="nav-link" data-i18n="nav.portfolio">Portfolio</a>
 <a href="process.html" class="nav-link" data-i18n="nav.process">Process</a>
-<a href="blog.html" class="nav-link active" data-i18n="nav.blog">Blog</a>
+<a href="blog.html" class="nav-link" data-i18n="nav.blog">Blog</a>
 <a href="reviews.html" class="nav-link" data-i18n="nav.reviews">Reviews</a>
 <a href="contact.html" class="nav-button" data-i18n="nav.letstalk">Let's Talk</a>
 
@@ -80,99 +69,87 @@
 </div>
 </header>
 
-<div class="blog-progress"></div>
-
 <main>
 
-<section class="blog-post-hero">
+<section class="page-hero">
 <div class="container">
 
-<a href="blog.html" class="blog-back-link" style="color:rgba(255,255,255,.85)">&larr; Back to Blog</a>
+<span class="section-label"><span class="label-emoji" aria-hidden="true">🛒</span> <span data-i18n="checkout.eyebrow">CHECKOUT</span></span>
 
-<div class="blog-card-meta">
-<span class="blog-category">Guides</span>
-<span>January 20, 2026</span>
-<span>&middot;</span>
-<span>6 min read</span>
+<h1 data-i18n-html="checkout.heroTitle">
+Complete your<br>
+<span>order.</span>
+</h1>
+
+<p data-i18n="checkout.heroText">
+Review your items, add your details, and pay securely with Paystack - or send your order to us on WhatsApp instead if you'd rather arrange payment directly.
+</p>
+
+</div>
+</section>
+
+<section class="section-padding">
+<div class="container">
+
+<div class="checkout-layout">
+
+<div class="catalogue-note checkout-page-note">
+<span class="catalogue-note-icon">ℹ</span>
+<p data-i18n="checkout.catalogueNote">The products in our catalogue are example packages showing what's included at each tier, not ready-made items pulled off a shelf. When you check out and pay, you're securing your project with us - we'll reach out shortly after to confirm the full details and get started.</p>
 </div>
 
-<h1>Basic, Standard, Premium or Luxury: Which Package Do You Actually Need?</h1>
+<div class="checkout-summary">
+<h2 data-i18n="checkout.orderSummary">Order Summary</h2>
+<div id="checkoutItems"></div>
+<div class="checkout-total-row">
+<span data-i18n="checkout.total">Total</span>
+<strong id="checkoutTotal">₦0</strong>
+</div>
+</div>
 
-<div class="blog-byline">
-<span class="blog-byline-avatar">MT</span>
-<span class="blog-byline-text"><strong>Mars Tee Studio</strong>Written by the studio team</span>
+<div class="checkout-form-card">
+<h2 data-i18n="checkout.yourDetails">Your Details</h2>
+
+<p id="checkoutLoginBanner" class="checkout-login-banner is-hidden"></p>
+<p class="checkout-guest-note" data-i18n-html="checkout.guestNote">Checking out as a guest? No problem - fill in your details below. <a href="account.html">Log in</a> first if you'd like this order saved to your order history.</p>
+
+<form id="checkoutForm">
+
+<div class="form-group">
+<label for="checkoutName" data-i18n="checkout.fullName">Full Name</label>
+<input type="text" id="checkoutName" name="name" placeholder="Enter your full name" required>
+</div>
+
+<div class="form-group">
+<label for="checkoutEmail" data-i18n="checkout.email">Email Address</label>
+<input type="email" id="checkoutEmail" name="email" placeholder="Enter your email" required>
+</div>
+
+<div class="form-group">
+<label for="checkoutPhone" data-i18n="checkout.phone">Phone Number</label>
+<input type="tel" id="checkoutPhone" name="phone" placeholder="Enter your phone number" required>
+</div>
+
+<div class="form-group">
+<label for="checkoutAddress" data-i18n="checkout.notes">Delivery / Project Notes (optional)</label>
+<textarea id="checkoutAddress" name="notes" rows="3" placeholder="Anything we should know before we start?"></textarea>
+</div>
+
+<button type="button" id="payButton" class="button button-primary checkout-pay-btn" data-i18n="checkout.payButton">Pay with Paystack →</button>
+<button type="button" id="whatsappOrderButton" class="button button-secondary checkout-whatsapp-btn" data-i18n="checkout.whatsappButton">Order via WhatsApp Instead</button>
+
+<p class="checkout-note" data-i18n="checkout.currencyNote">Your cart total is charged in Nigerian Naira (₦) regardless of the currency shown elsewhere on the site.</p>
+
+</form>
+</div>
+
 </div>
 
 </div>
 </section>
 
-<div class="container">
-<div class="blog-post-body">
-
-<div class="blog-share">
-<span class="blog-share-label">Share:</span>
-<a class="blog-share-btn" target="_blank" rel="noopener" aria-label="Share on WhatsApp" href="https://wa.me/?text=Basic, Standard, Premium or Luxury: Which Package Do You Actually Need? - Mars Tee Studio"><svg viewBox="0 0 24 24"><path d="M20.5 3.5A11.9 11.9 0 0 0 12.05 0C5.5 0 .17 5.32.17 11.88c0 2.1.55 4.15 1.6 5.96L.06 24l6.3-1.65a11.86 11.86 0 0 0 5.68 1.45h.01c6.55 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.43-8.42ZM12.05 21.8a9.9 9.9 0 0 1-5.05-1.38l-.36-.22-3.74.98 1-3.65-.24-.37a9.88 9.88 0 1 1 8.39 4.64Zm5.42-7.4c-.3-.15-1.78-.88-2.05-.98-.27-.1-.47-.15-.67.15-.2.3-.77.98-.94 1.18-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.03 1-1.03 2.45s1.05 2.84 1.2 3.04c.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.12.56-.08 1.78-.73 2.03-1.43.25-.7.25-1.3.17-1.43-.07-.13-.27-.2-.57-.35Z"/></svg></a>
-<a class="blog-share-btn" target="_blank" rel="noopener" aria-label="Share on X/Twitter" href="https://twitter.com/intent/tweet?text=Basic, Standard, Premium or Luxury: Which Package Do You Actually Need? - Mars Tee Studio"><svg viewBox="0 0 24 24"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.25l-4.9-6.86L6.05 22H2.9l7.25-8.29L2.4 2h6.4l4.43 6.2L18.9 2Z"/></svg></a>
-<button type="button" class="blog-share-btn blog-share-copy" aria-label="Copy link"><svg viewBox="0 0 24 24"><path d="M10.6 13.4a1 1 0 0 1 0-1.41l3-3a3 3 0 1 1 4.24 4.24l-1.5 1.5a1 1 0 1 1-1.41-1.41l1.5-1.5a1 1 0 1 0-1.41-1.41l-3 3a1 1 0 0 1-1.42 0Zm2.83-2.83a1 1 0 0 1 0 1.41l-3 3a3 3 0 1 1-4.24-4.24l1.5-1.5a1 1 0 1 1 1.41 1.41l-1.5 1.5a1 1 0 1 0 1.41 1.41l3-3a1 1 0 0 1 1.42 0Z"/></svg></button>
-</div>
-
-
-<p>It's tempting to assume "Luxury" is the best choice and "Basic" is a compromise. In practice, the right tier is the one that matches where your business actually is right now - not where you hope to be in three years.</p>
-
-<h2>Basic - when you need to exist online</h2>
-
-<p>If you don't have a website at all yet, Basic solves the most urgent problem: giving people somewhere to find you that isn't just a WhatsApp number or an Instagram bio link. One to three pages, mobile responsive, a working contact method. No frills, but it's real and it's yours.</p>
-
-<p>Right for: new businesses, side hustles testing an idea, anyone who currently has zero web presence.</p>
-
-<h2>Standard - when you're past "just starting"</h2>
-
-<p>Once you have a track record - actual work to show, testimonials, a clearer sense of your services - Standard gives you room to show it. A dedicated services page, a gallery or portfolio section, testimonials, and a more custom look than Basic.</p>
-
-<p>Right for: businesses with 6+ months of real operation and something to showcase.</p>
-
-<h2>Premium - when your website needs to do more work for you</h2>
-
-<p>Premium is where a website stops being a digital business card and starts being a real tool - a blog for content marketing, a booking or enquiry system, more advanced SEO. This is the tier for businesses actively trying to grow their reach, not just be findable.</p>
-
-<p>Right for: established businesses investing in growth, not just presence.</p>
-
-<h2>Luxury - when the website is core infrastructure</h2>
-
-<p>Luxury includes things like a real database backend, an admin dashboard you can manage yourself, and potentially e-commerce or user accounts. This is a genuine piece of business infrastructure, not just a marketing page.</p>
-
-<p>Right for: businesses where the website itself needs to run part of the operation - inventory, bookings, content you update constantly, or direct online sales.</p>
-
-<h2>Our honest advice</h2>
-
-<p>Start one tier below what feels impressive, not one tier above what feels necessary. You can always upgrade later once the business has grown into needing it - we'd rather build you the right thing twice than the wrong thing once.</p>
-
-<div class="blog-post-cta">
-<h3>Still not sure which one fits?</h3>
-<p>Tell us about your business and what you're trying to do - we'll recommend a tier honestly, even if it's not the one that makes us the most money.</p>
-<a href="contact.html" class="button button-primary">Talk to Us →</a>
-</div>
-
-
-<div class="blog-related">
-<h3>Related Reading</h3>
-<div class="blog-related-grid">
-
-<a href="blog-how-much-should-a-website-cost-in-nigeria.html" class="blog-related-card blog-reveal">
-<span class="blog-category">Pricing</span>
-<h4>How Much Should a Website Really Cost in Nigeria?</h4>
-</a>
-<a href="blog-5-signs-your-business-needs-a-website.html" class="blog-related-card blog-reveal">
-<span class="blog-category">Tips</span>
-<h4>5 Signs Your Small Business Needs a Website in 2026</h4>
-</a>
-</div>
-</div>
-
-</div>
-</div>
-
 </main>
+
 <footer class="site-footer">
 <div class="container">
 <div class="footer-main">
@@ -232,7 +209,6 @@ Creative digital solutions, thoughtful design and experiences built around your 
 
 </div>
 
-
 <div class="footer-bottom">
 
 <p data-i18n="footer.copyright">© 2026 Mars Tee Studio. All Rights Reserved.</p>
@@ -247,9 +223,11 @@ Creative digital solutions, thoughtful design and experiences built around your 
 </div>
 
 </footer>
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
 <script src="js/icons.js"></script>
-<script src="js/blog.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
+<script src="js/checkout.js"></script>
 </body>
 </html>
