@@ -414,5 +414,15 @@
   "terms.h11": "11. 适用法律",
   "terms.p9": "本条款受尼日利亚联邦共和国法律管辖。",
   "terms.h12": "12. 联系我们",
-  "terms.p10": "对这些条款有疑问？请通过 <a href=\"mailto:sunmoilaoluwatolami@gmail.com\">sunmoilaoluwatolami@gmail.com</a> 或我们的<a href=\"contact.html\">联系页面</a>联系我们。"
+  "terms.p10": "对这些条款有疑问？请通过 <a href=\"mailto:sunmoilaoluwatolami@gmail.com\">sunmoilaoluwatolami@gmail.com</a> 或我们的<a href=\"contact.html\">联系页面</a>联系我们。",
+  "account.createAccountTitle": "创建您的账户",
+  "account.createAccountSubtitle": "追踪订单,下次结账更快捷。",
+  "account.continueWithGoogle": "使用 Google 继续",
+  "account.or": "或",
+  "account.alreadyHaveAccount": "已有账户？",
+  "account.logInLink": "登录",
+  "account.welcomeBackTitle": "欢迎回来",
+  "account.welcomeBackSubtitle": "登录以查看您的订单历史并更快结账。",
+  "account.dontHaveAccount": "还没有账户？",
+  "account.signUpLink": "注册"
 }

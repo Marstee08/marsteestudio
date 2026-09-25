@@ -160,18 +160,26 @@
                         { display_name: "Order", variable_name: "order", value: cart.map(i => `${i.name} x${i.qty}`).join(", ") }
                     ]
                 },
-                callback: async function (response) {
-                    const orderId = await saveOrder(cart, values, response.reference, total);
-                    verifyPayment(response.reference, orderId); // fire-and-forget - see comment above
-                    if (typeof saveCart === "function") saveCart([]);
-                    document.getElementById("checkoutForm").innerHTML = `
-                        <div class="checkout-success">
-                            <h3>Payment received - thank you!</h3>
-                            <p>Reference: ${response.reference}</p>
-                            <p>We'll reach out shortly to confirm your order details. You can also message us directly on WhatsApp if you'd like to speak now.</p>
-                            <a href="https://wa.me/2349124147362" class="button button-primary">Chat With Us →</a>
-                        </div>
-                    `;
+                // NOTE: this is written as a plain function (not `async function`)
+                // on purpose - Paystack's own inline.js does its own runtime check
+                // on this value and, on at least some versions, rejects an async
+                // function with "Attribute callback must be a valid function" even
+                // though it's completely valid JS. Wrapping the async work in an
+                // inner IIFE sidesteps that check entirely.
+                callback: function (response) {
+                    (async () => {
+                        const orderId = await saveOrder(cart, values, response.reference, total);
+                        verifyPayment(response.reference, orderId); // fire-and-forget - see comment above
+                        if (typeof saveCart === "function") saveCart([]);
+                        document.getElementById("checkoutForm").innerHTML = `
+                            <div class="checkout-success">
+                                <h3>Payment received - thank you!</h3>
+                                <p>Reference: ${response.reference}</p>
+                                <p>We'll reach out shortly to confirm your order details. You can also message us directly on WhatsApp if you'd like to speak now.</p>
+                                <a href="https://wa.me/2349124147362" class="button button-primary">Chat With Us →</a>
+                            </div>
+                        `;
+                    })();
                 },
                 onClose: function () {
                     // user closed the payment popup without paying - nothing to do

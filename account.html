@@ -101,28 +101,30 @@ Create an account to see your order history any time, or skip this and checkout 
 <section class="account-section section-padding">
 <div class="container">
 
-<!-- Signed OUT state: login / sign up -->
+<!-- Signed OUT state: sign up first (primary), log in as a secondary link -->
 <div id="authArea" class="contact-form-card account-auth-card">
 
-<div class="account-tabs" role="tablist">
-<button type="button" class="account-tab is-active" id="tabLogin" data-target="loginForm" data-i18n="account.logIn">Log In</button>
-<button type="button" class="account-tab" id="tabSignup" data-target="signupForm" data-i18n="account.signUp">Sign Up</button>
+<!-- SIGN UP VIEW (default) -->
+<div id="signupView" class="account-auth-view">
+
+<div class="account-auth-header">
+<h2 data-i18n="account.createAccountTitle">Create your account</h2>
+<p data-i18n="account.createAccountSubtitle">Track your orders and check out faster next time.</p>
 </div>
 
-<form id="loginForm" class="account-form">
-<div class="form-group">
-<label for="loginEmail" data-i18n="account.emailAddress">Email Address</label>
-<input type="email" id="loginEmail" placeholder="Enter your email" required>
-</div>
-<div class="form-group">
-<label for="loginPassword" data-i18n="account.password">Password</label>
-<input type="password" id="loginPassword" placeholder="Enter your password" required>
-</div>
-<p class="account-form-error" id="loginError"></p>
-<button type="submit" class="button button-primary" data-i18n="account.logInBtn">Log In →</button>
-</form>
+<button type="button" class="account-google-btn" id="googleSignupBtn">
+<svg class="account-google-icon" viewBox="0 0 48 48" aria-hidden="true">
+<path fill="#FFC107" d="M43.6 20.5H42V20.4H24v7.2h11.3c-1.6 4.6-6 7.9-11.3 7.9-6.7 0-12.2-5.5-12.2-12.2S17.3 11.1 24 11.1c3.1 0 5.9 1.2 8.1 3.1l5.4-5.4C34.2 5.6 29.4 3.6 24 3.6 12.7 3.6 3.6 12.7 3.6 24S12.7 44.4 24 44.4 44.4 35.3 44.4 24c0-1.2-.1-2.4-.3-3.5Z"/>
+<path fill="#FF3D00" d="m6.3 14.7 5.9 4.3c1.6-4 5.5-6.9 10.1-6.9 3.1 0 5.9 1.2 8.1 3.1l5.4-5.4C32.4 6 28.4 4.4 24 4.4c-7.4 0-13.8 4.2-17.1 10.3Z"/>
+<path fill="#4CAF50" d="M24 44.4c5.3 0 10-1.8 13.3-4.9l-6.1-5.2c-2 1.4-4.6 2.3-7.2 2.3-5.3 0-9.7-3.3-11.3-7.9l-6.1 4.7C9.9 40 16.4 44.4 24 44.4Z"/>
+<path fill="#1976D2" d="M43.6 20.5H42V20.4H24v7.2h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.1 5.2c-.4.4 6.5-4.8 6.5-14.4 0-1.2-.1-2.4-.3-3.5Z"/>
+</svg>
+<span data-i18n="account.continueWithGoogle">Continue with Google</span>
+</button>
 
-<form id="signupForm" class="account-form is-hidden">
+<div class="account-divider"><span data-i18n="account.or">or</span></div>
+
+<form id="signupForm" class="account-form">
 <div class="form-group">
 <label for="signupName" data-i18n="account.fullName">Full Name</label>
 <input type="text" id="signupName" placeholder="Enter your full name" required>
@@ -139,6 +141,53 @@ Create an account to see your order history any time, or skip this and checkout 
 <p class="account-form-success is-hidden" id="signupSuccess"></p>
 <button type="submit" class="button button-primary" data-i18n="account.createAccountBtn">Create Account →</button>
 </form>
+
+<p class="account-switch-link">
+<span data-i18n="account.alreadyHaveAccount">Already have an account?</span>
+<button type="button" class="account-link-btn" id="showLoginBtn" data-i18n="account.logInLink">Log In</button>
+</p>
+
+</div>
+
+<!-- LOG IN VIEW (secondary, reached via the link above) -->
+<div id="loginView" class="account-auth-view is-hidden">
+
+<div class="account-auth-header">
+<h2 data-i18n="account.welcomeBackTitle">Welcome back</h2>
+<p data-i18n="account.welcomeBackSubtitle">Log in to see your order history and check out faster.</p>
+</div>
+
+<button type="button" class="account-google-btn" id="googleLoginBtn">
+<svg class="account-google-icon" viewBox="0 0 48 48" aria-hidden="true">
+<path fill="#FFC107" d="M43.6 20.5H42V20.4H24v7.2h11.3c-1.6 4.6-6 7.9-11.3 7.9-6.7 0-12.2-5.5-12.2-12.2S17.3 11.1 24 11.1c3.1 0 5.9 1.2 8.1 3.1l5.4-5.4C34.2 5.6 29.4 3.6 24 3.6 12.7 3.6 3.6 12.7 3.6 24S12.7 44.4 24 44.4 44.4 35.3 44.4 24c0-1.2-.1-2.4-.3-3.5Z"/>
+<path fill="#FF3D00" d="m6.3 14.7 5.9 4.3c1.6-4 5.5-6.9 10.1-6.9 3.1 0 5.9 1.2 8.1 3.1l5.4-5.4C32.4 6 28.4 4.4 24 4.4c-7.4 0-13.8 4.2-17.1 10.3Z"/>
+<path fill="#4CAF50" d="M24 44.4c5.3 0 10-1.8 13.3-4.9l-6.1-5.2c-2 1.4-4.6 2.3-7.2 2.3-5.3 0-9.7-3.3-11.3-7.9l-6.1 4.7C9.9 40 16.4 44.4 24 44.4Z"/>
+<path fill="#1976D2" d="M43.6 20.5H42V20.4H24v7.2h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.1 5.2c-.4.4 6.5-4.8 6.5-14.4 0-1.2-.1-2.4-.3-3.5Z"/>
+</svg>
+<span data-i18n="account.continueWithGoogle">Continue with Google</span>
+</button>
+
+<div class="account-divider"><span data-i18n="account.or">or</span></div>
+
+<form id="loginForm" class="account-form">
+<div class="form-group">
+<label for="loginEmail" data-i18n="account.emailAddress">Email Address</label>
+<input type="email" id="loginEmail" placeholder="Enter your email" required>
+</div>
+<div class="form-group">
+<label for="loginPassword" data-i18n="account.password">Password</label>
+<input type="password" id="loginPassword" placeholder="Enter your password" required>
+</div>
+<p class="account-form-error" id="loginError"></p>
+<button type="submit" class="button button-primary" data-i18n="account.logInBtn">Log In →</button>
+</form>
+
+<p class="account-switch-link">
+<span data-i18n="account.dontHaveAccount">Don't have an account?</span>
+<button type="button" class="account-link-btn" id="showSignupBtn" data-i18n="account.signUpLink">Sign Up</button>
+</p>
+
+</div>
 
 <p class="account-guest-note" data-i18n-html="account.guestNote">
 Don't want an account? <a href="catalogue.html">Continue shopping as a guest</a> — you can always create one later.

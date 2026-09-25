@@ -8,6 +8,7 @@
     function showAuthArea() {
         document.getElementById("authArea")?.classList.remove("is-hidden");
         document.getElementById("accountArea")?.classList.add("is-hidden");
+        showSignupView(); // reset to the default (signup-first) view for next time
     }
 
     function showAccountArea(user) {
@@ -21,26 +22,35 @@
         loadOrders();
     }
 
-    function setupTabs() {
-        const tabLogin = document.getElementById("tabLogin");
-        const tabSignup = document.getElementById("tabSignup");
-        const loginForm = document.getElementById("loginForm");
-        const signupForm = document.getElementById("signupForm");
-        if (!tabLogin || !tabSignup) return;
+    function showSignupView() {
+        document.getElementById("signupView")?.classList.remove("is-hidden");
+        document.getElementById("loginView")?.classList.add("is-hidden");
+    }
 
-        tabLogin.addEventListener("click", () => {
-            tabLogin.classList.add("is-active");
-            tabSignup.classList.remove("is-active");
-            loginForm.classList.remove("is-hidden");
-            signupForm.classList.add("is-hidden");
-        });
+    function showLoginView() {
+        document.getElementById("loginView")?.classList.remove("is-hidden");
+        document.getElementById("signupView")?.classList.add("is-hidden");
+    }
 
-        tabSignup.addEventListener("click", () => {
-            tabSignup.classList.add("is-active");
-            tabLogin.classList.remove("is-active");
-            signupForm.classList.remove("is-hidden");
-            loginForm.classList.add("is-hidden");
+    function setupViewSwitching() {
+        document.getElementById("showLoginBtn")?.addEventListener("click", showLoginView);
+        document.getElementById("showSignupBtn")?.addEventListener("click", showSignupView);
+    }
+
+    async function signInWithGoogle() {
+        const supabase = client();
+        if (!supabase) return;
+        await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo: window.location.origin + "/account.html" }
         });
+        // Browser navigates away to Google, then back here - checkSession()
+        // on the next page load picks up the resulting session.
+    }
+
+    function setupGoogleButtons() {
+        document.getElementById("googleSignupBtn")?.addEventListener("click", signInWithGoogle);
+        document.getElementById("googleLoginBtn")?.addEventListener("click", signInWithGoogle);
     }
 
     function setupLoginForm() {
@@ -188,7 +198,8 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        setupTabs();
+        setupViewSwitching();
+        setupGoogleButtons();
         setupLoginForm();
         setupSignupForm();
         setupLogout();

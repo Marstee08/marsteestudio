@@ -414,5 +414,15 @@
   "terms.h11": "11. Ley Aplicable",
   "terms.p9": "Estos términos se rigen por las leyes de la República Federal de Nigeria.",
   "terms.h12": "12. Contáctanos",
-  "terms.p10": "¿Preguntas sobre estos términos? Contáctanos en <a href=\"mailto:sunmoilaoluwatolami@gmail.com\">sunmoilaoluwatolami@gmail.com</a> o a través de nuestra <a href=\"contact.html\">página de Contacto</a>."
+  "terms.p10": "¿Preguntas sobre estos términos? Contáctanos en <a href=\"mailto:sunmoilaoluwatolami@gmail.com\">sunmoilaoluwatolami@gmail.com</a> o a través de nuestra <a href=\"contact.html\">página de Contacto</a>.",
+  "account.createAccountTitle": "Crea tu cuenta",
+  "account.createAccountSubtitle": "Rastrea tus pedidos y paga más rápido la próxima vez.",
+  "account.continueWithGoogle": "Continuar con Google",
+  "account.or": "o",
+  "account.alreadyHaveAccount": "¿Ya tienes una cuenta?",
+  "account.logInLink": "Iniciar Sesión",
+  "account.welcomeBackTitle": "Bienvenido de nuevo",
+  "account.welcomeBackSubtitle": "Inicia sesión para ver tu historial de pedidos y pagar más rápido.",
+  "account.dontHaveAccount": "¿No tienes una cuenta?",
+  "account.signUpLink": "Registrarse"
 }
