@@ -22,6 +22,8 @@ outline-offset: 3px;
 --blue: #0b63f6;
 --blue-dark: #063b91;
 --blue-light: #eaf2ff;
+--gold: #b8873c;
+--gold-light: #f7ecd9;
 --white: #ffffff;
 --black: #08111f;
 --text: #172033;
@@ -69,6 +71,8 @@ html.dark-theme {
 --border: #202a39;
 --light: #0f1622;
 --blue-light: #102a52;
+--gold: #d1a659;
+--gold-light: #2a2211;
 background: var(--white);
 color: var(--text);
 }
@@ -159,7 +163,7 @@ html.dark-theme .portfolio-filter:hover,
 html.dark-theme .portfolio-filter.active {
 background: var(--blue);
 border-color: var(--blue);
-color: var(--white);
+color: #ffffff;
 }
 
 html.dark-theme .site-footer {
@@ -251,7 +255,7 @@ padding: 90px 0;
 font-size: var(--fs-xs);
 font-weight: 700;
 letter-spacing: 0.18em;
-color: var(--blue);
+color: var(--gold);
 margin-bottom: 18px;
 }
 
@@ -278,7 +282,7 @@ background 0.3s ease;
 .button-primary,
 .admin-button {
 background: var(--blue);
-color: var(--white);
+color: #ffffff;
 }
 
 .button-primary:hover,
@@ -355,7 +359,7 @@ display: flex;
 align-items: center;
 justify-content: center;
 background: var(--blue);
-color: var(--white);
+color: #ffffff;
 font-size: var(--fs-xs);
 letter-spacing: -0.04em;
 }
@@ -489,7 +493,7 @@ flex-direction: column;
 .stat strong {
 font-family: "Manrope", sans-serif;
 font-size: var(--fs-2xl);
-color: var(--black);
+color: var(--gold);
 }
 
 .stat span {
@@ -518,7 +522,7 @@ display: flex;
 flex-direction: column;
 justify-content: space-between;
 background: var(--blue);
-color: var(--white);
+color: #ffffff;
 box-shadow: 0 35px 80px rgba(11, 99, 246, 0.2);
 transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
@@ -687,13 +691,13 @@ transform: translateY(-5px);
 
 .featured-service {
 background: var(--blue);
-color: var(--white);
+color: #ffffff;
 }
 
 .featured-service h3,
 .featured-service p,
 .featured-service .service-number {
-color: var(--white);
+color: #ffffff;
 }
 
 .service-number {
@@ -709,7 +713,7 @@ color: var(--blue);
 }
 
 .featured-service .service-icon {
-color: var(--white);
+color: #ffffff;
 }
 
 .service-card p {
@@ -724,7 +728,7 @@ color: var(--blue);
 }
 
 .featured-service .service-link {
-color: var(--white);
+color: #ffffff;
 }.digital-experience-section {
 background: var(--light);
 }
@@ -1451,7 +1455,7 @@ transition: 0.3s ease;
 .catalogue-filter.active {
 background: var(--blue);
 border-color: var(--blue);
-color: var(--white);
+color: #ffffff;
 }
 
 .catalogue-grid {
@@ -1579,7 +1583,7 @@ transition: 0.3s ease;
 .portfolio-filter.active {
 background: var(--blue);
 border-color: var(--blue);
-color: var(--white);
+color: #ffffff;
 }
 
 .portfolio-grid {
@@ -2374,12 +2378,12 @@ background: var(--blue);
 }
 
 .availability-box h2 {
-color: var(--white);
+color: #ffffff;
 margin-bottom: 20px;
 }
 
 .availability-box h2 span {
-color: var(--black);
+color: var(--gold);
 }
 
 .availability-box p {
@@ -2395,7 +2399,7 @@ flex-shrink: 0;
 }
 
 .availability-actions .button-primary {
-background: var(--white);
+background: #ffffff;
 color: var(--blue);
 }
 
@@ -2407,7 +2411,7 @@ color: var(--white);
 .availability-actions .button-secondary {
 background: transparent;
 border-color: rgba(255, 255, 255, 0.4);
-color: var(--white);
+color: #ffffff;
 }
 
 .availability-actions .button-secondary:hover {
@@ -3554,7 +3558,7 @@ transform: none;
 .filter-button.active {
     background: var(--blue);
     border-color: var(--blue);
-    color: var(--white);
+    color: #ffffff;
 }
 
 
@@ -4236,7 +4240,7 @@ transform: none;
 
     border-color: var(--blue);
 
-    color: var(--white);
+    color: #ffffff;
 
     transform: rotate(-5deg) scale(1.05);
 }
@@ -4390,7 +4394,7 @@ transform: none;
 /* Label */
 
 .catalogue-custom-box .section-label {
-    color: #7eb0ff;
+    color: var(--gold);
 }
 
 
@@ -4654,7 +4658,7 @@ transform: none;
 /* Label */
 
 .catalogue-cta .simple-cta .section-label {
-    color: #7eb0ff;
+    color: var(--gold);
 }
 
 
@@ -4955,7 +4959,10 @@ html.dark-theme label {
     color: #aeb8c8 !important;
 }
 
-html.dark-theme .section-label,
+html.dark-theme .section-label {
+    color: var(--gold) !important;
+}
+
 html.dark-theme .eyebrow,
 html.dark-theme .text-link {
     color: #58a0ff !important;
@@ -5468,22 +5475,26 @@ color: var(--icon-brand, var(--blue));
    ========================================================= */
 
 .currency-switcher {
-    height: 42px;
-    padding: 0 30px 0 14px;
+    height: 36px;
+    padding: 0 26px 0 12px;
     border: 1px solid var(--border);
     background: var(--white);
     color: var(--black);
     font-family: inherit;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23111827' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 16px;
+    background-position: right 6px center;
+    background-size: 14px;
+    border-radius: 6px;
     transition: 0.3s ease;
+    margin-left: 18px;
+    padding-left: calc(12px + 18px);
+    border-left: 1px solid var(--border);
 }
 
 .currency-switcher:hover {
@@ -5500,21 +5511,22 @@ html.dark-theme .currency-switcher {
 }
 
 .language-switcher {
-    height: 42px;
-    padding: 0 30px 0 14px;
+    height: 36px;
+    padding: 0 26px 0 12px;
     border: 1px solid var(--border);
     background: var(--white);
     color: var(--black);
     font-family: inherit;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23111827' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 16px;
+    background-position: right 6px center;
+    background-size: 14px;
+    border-radius: 6px;
     transition: 0.3s ease;
     margin-left: 8px;
 }
@@ -5964,7 +5976,7 @@ html.dark-theme .tier-feel-best {
     height: 22px;
     border-radius: 50%;
     background: var(--blue);
-    color: var(--white);
+    color: #ffffff;
     font-size: var(--fs-2xs);
     font-style: normal;
     font-weight: 700;
@@ -7989,4 +8001,160 @@ html.dark-theme .checkout-item {
 
 html.dark-theme .checkout-total-row {
     border-color: #2a3850 !important;
+}
+
+/* =========================================================
+   PAGE LOADER
+   Shows briefly on every page load/refresh (not gated by
+   sessionStorage like the homepage's one-time cinematic
+   intro - this one is a lightweight, universal loading
+   screen, excluded from index.html on purpose so the two
+   don't stack). Hidden via JS once the page is ready or
+   after a short minimum time, whichever is later.
+   ========================================================= */
+
+.page-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    background: #08111f;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
+
+.page-loader.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.page-loader-ring {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.12);
+}
+
+.page-loader-ring::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: var(--blue);
+    border-right-color: var(--blue);
+    animation: pageLoaderSpin 0.9s linear infinite;
+}
+
+.page-loader-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.page-loader-text {
+    font-family: "Manrope", sans-serif;
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+}
+
+@keyframes pageLoaderSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-loader-ring::before {
+        animation: none;
+    }
+}
+
+/* =========================================================
+   PWA INSTALL BANNER
+   Injected by script.js on the `beforeinstallprompt` event.
+   Android/Desktop Chrome only - iOS Safari never fires this
+   event, so iPhone visitors never see this banner (platform
+   limitation, not a bug).
+   ========================================================= */
+
+.pwa-install-banner {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translate(-50%, -20px);
+    width: min(420px, calc(100% - 32px));
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--black);
+    color: var(--white);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.pwa-install-banner.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.pwa-install-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.pwa-install-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-install-text strong {
+    font-size: 0.9rem;
+}
+
+.pwa-install-text span {
+    font-size: 0.78rem;
+    opacity: 0.75;
+}
+
+.pwa-install-btn {
+    padding: 8px 16px !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+}
+
+.pwa-install-close {
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.6;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+.pwa-install-close:hover {
+    opacity: 1;
 }

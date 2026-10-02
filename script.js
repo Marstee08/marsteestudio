@@ -1825,5 +1825,97 @@ window.addEventListener("load", () => {
     setTimeout(endIntro, 4900);
 });
 
+/* =========================================================
+   PAGE LOADER - shown on every page load, hidden once ready
+   ========================================================= */
+
+(function () {
+    const MIN_DISPLAY_MS = 500;   // avoid an imperceptible flash on fast loads
+    const MAX_DISPLAY_MS = 4000;  // never let it hang forever on a slow connection
+    const startTime = Date.now();
+
+    function hideLoader() {
+        const loader = document.getElementById("pageLoader");
+        if (!loader || loader.dataset.hidden) return;
+        loader.dataset.hidden = "true";
+        loader.classList.add("is-hidden");
+        setTimeout(() => loader.remove(), 450);
+    }
+
+    function readyToHide() {
+        const elapsed = Date.now() - startTime;
+        setTimeout(hideLoader, Math.max(0, MIN_DISPLAY_MS - elapsed));
+    }
+
+    if (document.readyState === "complete") {
+        readyToHide();
+    } else {
+        window.addEventListener("load", readyToHide);
+    }
+    setTimeout(hideLoader, MAX_DISPLAY_MS); // hard safety net
+})();
+
+/* =========================================================
+   PWA - service worker + "Install app" prompt
+   The install banner only appears on browsers that fire
+   `beforeinstallprompt` (Chrome/Edge on Android and desktop) -
+   iOS Safari never fires this event and has no equivalent API,
+   so iPhone visitors simply never see this banner. That's a
+   platform limitation, not a bug: iOS users install PWAs
+   manually via Safari's own Share -> Add to Home Screen.
+   ========================================================= */
+
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {
+            // Non-fatal - the site works fine without offline support.
+        });
+    });
+}
+
+let deferredInstallPrompt = null;
+
+function showInstallBanner() {
+    if (document.querySelector(".pwa-install-banner")) return;
+
+    const banner = document.createElement("div");
+    banner.className = "pwa-install-banner";
+    banner.innerHTML = `
+        <img src="images/icon-192.png" alt="" class="pwa-install-icon">
+        <div class="pwa-install-text">
+            <strong>Install Mars Tee Studio</strong>
+            <span>Faster access, right from your home screen.</span>
+        </div>
+        <button type="button" class="button button-primary pwa-install-btn">Install</button>
+        <button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>
+    `;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => banner.classList.add("is-visible"));
+
+    function dismiss() {
+        banner.classList.remove("is-visible");
+        setTimeout(() => banner.remove(), 400);
+    }
+
+    banner.querySelector(".pwa-install-close").addEventListener("click", dismiss);
+
+    banner.querySelector(".pwa-install-btn").addEventListener("click", async () => {
+        dismiss();
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+    });
+
+    // Auto-dismiss if the visitor doesn't interact within 5 seconds.
+    setTimeout(dismiss, 5000);
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    showInstallBanner();
+});
+
 console.log("%cMars Tee Studio", "font-size:22px;font-weight:800;color:#2563eb;");
 console.log("%cDigital experiences. Premium design. Built to impress.", "font-size:12px;color:#64748b;");

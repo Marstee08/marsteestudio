@@ -93,6 +93,49 @@
             max-width: 700px;
         }
 
+        .admin-form-layout {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .admin-form-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .admin-preview-wrap {
+            position: sticky;
+            top: 24px;
+        }
+
+        .admin-preview-label {
+            font-size: 0.8rem;
+            color: var(--admin-text-muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .admin-preview-frame {
+            background: #f7f9fc;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .admin-preview-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            min-height: 160px;
+            color: #9aa4b2;
+            font-size: 0.85rem;
+            background: #eef1f6;
+        }
+
         .admin-form label {
             display: grid;
             gap: 7px;
@@ -501,6 +544,7 @@
                     Add Product / Service
                 </h2>
 
+                <div class="admin-form-layout">
 
                 <form
                     id="productForm"
@@ -920,6 +964,29 @@
 
                 </form>
 
+                <aside class="admin-preview-wrap">
+                    <p class="admin-preview-label">Live Preview — this is exactly how it will look on your Catalogue page</p>
+                    <div class="admin-preview-frame">
+                        <article class="catalogue-card" id="livePreviewCard">
+                            <div class="catalogue-image" id="previewImageWrap">
+                                <span class="admin-preview-placeholder">No image yet</span>
+                            </div>
+                            <div class="catalogue-info">
+                                <span class="section-label" id="previewType">TYPE</span>
+                                <h3 id="previewName">Your product name</h3>
+                                <p id="previewDescription">Your description will appear here as you type.</p>
+                                <strong class="price-display" id="previewPrice"></strong>
+                                <div class="catalogue-card-actions">
+                                    <button type="button" class="button button-primary" disabled>Add to Cart</button>
+                                    <span class="button button-secondary" style="pointer-events:none;">Chat on WhatsApp</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </aside>
+
+                </div>
+
             </section>
 
 
@@ -1083,6 +1150,58 @@ function updateProjectTypeFields(){
     if(projectType?.value==="digital")digitalFields?.classList.remove("hidden");
 }
 projectType?.addEventListener("change",updateProjectTypeFields);
+
+/* ===== Live preview (mirrors the exact catalogue-card markup from script.js) ===== */
+const previewName=document.getElementById("previewName");
+const previewDescription=document.getElementById("previewDescription");
+const previewType=document.getElementById("previewType");
+const previewPrice=document.getElementById("previewPrice");
+const previewImageWrap=document.getElementById("previewImageWrap");
+
+function currentPreviewImageFile(){
+    if(projectType?.value==="website")return document.getElementById("websiteScreenshotFile")?.files?.[0];
+    if(projectType?.value==="digital")return document.getElementById("digitalPreviewFile")?.files?.[0];
+    return null;
+}
+
+function renderLivePreview(){
+    if(!previewName)return;
+
+    const name=document.getElementById("productName")?.value.trim();
+    previewName.textContent=name||"Your product name";
+
+    const description=document.getElementById("productDescription")?.value.trim();
+    previewDescription.textContent=description||"Your description will appear here as you type.";
+
+    const category=document.getElementById("productCategory")?.value.trim();
+    const typeLabel=category||(projectType?.value==="digital"?"DIGITAL EXPERIENCE":projectType?.value==="website"?"WEBSITE":"TYPE");
+    previewType.textContent=typeLabel.toUpperCase();
+
+    const priceValue=parseFloat(document.getElementById("productPrice")?.value);
+    if(Number.isFinite(priceValue)&&priceValue>0){
+        previewPrice.style.display="";
+        previewPrice.textContent=typeof formatPrice==="function"?formatPrice(priceValue):("₦"+priceValue.toLocaleString());
+    }else{
+        previewPrice.style.display="none";
+    }
+
+    const file=currentPreviewImageFile();
+    if(file){
+        previewImageWrap.innerHTML=`<img src="${URL.createObjectURL(file)}" alt="${name||"Preview"}">`;
+    }else{
+        previewImageWrap.innerHTML=`<span class="admin-preview-placeholder">No image yet</span>`;
+    }
+}
+
+["productName","productDescription","productPrice","productCategory","productPackage"].forEach(id=>{
+    document.getElementById(id)?.addEventListener("input",renderLivePreview);
+});
+["websiteScreenshotFile","digitalPreviewFile"].forEach(id=>{
+    document.getElementById(id)?.addEventListener("change",renderLivePreview);
+});
+projectType?.addEventListener("change",renderLivePreview);
+productForm?.addEventListener("reset",()=>setTimeout(renderLivePreview,0));
+renderLivePreview();
 
 function previewFiles(files){
     if(!imagePreview)return;
