@@ -388,10 +388,21 @@ function applyTranslations(lang, dict) {
         if (el.dataset.i18nOriginal === undefined) el.dataset.i18nOriginal = el.textContent;
         el.textContent = (lang !== "en" && dict && dict[el.dataset.i18n]) || el.dataset.i18nOriginal;
     });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        if (el.dataset.i18nOriginal === undefined) el.dataset.i18nOriginal = el.getAttribute("placeholder") || "";
+        el.setAttribute("placeholder", (lang !== "en" && dict && dict[el.dataset.i18nPlaceholder]) || el.dataset.i18nOriginal);
+    });
     document.querySelectorAll("[data-i18n-html]").forEach(el => {
         if (el.dataset.i18nOriginal === undefined) el.dataset.i18nOriginal = el.innerHTML;
         el.innerHTML = (lang !== "en" && dict && dict[el.dataset.i18nHtml]) || el.dataset.i18nOriginal;
     });
+}
+
+// Re-run translations after dynamic content (drawer, popup, product cards) is added.
+function retranslate() {
+    const lang = getActiveLanguage();
+    if (lang === "en") return;
+    loadTranslations(lang).then(dict => dict && applyTranslations(lang, dict));
 }
 
 async function setLanguage(lang, manual) {
@@ -1066,20 +1077,55 @@ document.addEventListener("DOMContentLoaded", () => {
     const mainNav = document.querySelector(".main-nav");
 
     if (menuToggle && mainNav) {
-        menuToggle.addEventListener("click", () => {
-            const open = mainNav.classList.toggle("mobile-open");
+        // Side-drawer extras (hidden on desktop by CSS): header row with
+        // logo + close button, a WhatsApp button, and a dimmed overlay.
+        const logoSrc = document.querySelector(".logo-img")?.getAttribute("src") || "images/mars-tee-logo.png";
+        const head = document.createElement("div");
+        head.className = "drawer-head";
+        head.innerHTML = '<span class="drawer-brand"><img src="' + logoSrc + '" alt=""><span>Mars Tee Studio</span></span><button type="button" class="drawer-close" aria-label="Close menu">&times;</button>';
+        mainNav.prepend(head);
+
+        const foot = document.createElement("div");
+        foot.className = "drawer-foot";
+        foot.innerHTML = '<a class="drawer-whatsapp" href="https://wa.me/2349124147362" target="_blank" rel="noopener" data-i18n="new.whatsappUs">WhatsApp Us</a>' +
+                         '<a class="drawer-signin" href="account.html" data-i18n="new.signIn">Sign In</a>';
+        mainNav.appendChild(foot);
+        retranslate();
+        // Logged-in visitors see "My Account" instead of "Sign In".
+        try {
+            if (typeof siteSupabaseClient !== "undefined" && siteSupabaseClient) {
+                siteSupabaseClient.auth.getSession().then(({ data }) => {
+                    if (data && data.session) {
+                        const link = foot.querySelector(".drawer-signin");
+                        link.setAttribute("data-i18n", "new.myAccount");
+                        link.textContent = "My Account";
+                        retranslate();
+                    }
+                });
+            }
+        } catch (e) {}
+
+        const overlay = document.createElement("div");
+        overlay.className = "nav-overlay";
+        mainNav.parentElement.appendChild(overlay);
+
+        const setMenu = open => {
+            mainNav.classList.toggle("mobile-open", open);
+            overlay.classList.toggle("show", open);
             menuToggle.classList.toggle("active", open);
             menuToggle.setAttribute("aria-expanded", String(open));
-        });
+            document.body.classList.toggle("nav-open", open);
+        };
 
-        mainNav.querySelectorAll("a").forEach(link => {
-            link.addEventListener("click", () => {
-                mainNav.classList.remove("mobile-open");
-                menuToggle.classList.remove("active");
-                menuToggle.setAttribute("aria-expanded", "false");
-            });
-        });
+        menuToggle.addEventListener("click", () => setMenu(!mainNav.classList.contains("mobile-open")));
+        head.querySelector(".drawer-close").addEventListener("click", () => setMenu(false));
+        overlay.addEventListener("click", () => setMenu(false));
+        document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+        window.addEventListener("resize", () => { if (window.innerWidth > 760) setMenu(false); });
+        mainNav.querySelectorAll("a.nav-link, a.nav-button").forEach(link => link.addEventListener("click", () => setMenu(false)));
     }
+
+    setupBackToTop();
 
     /* Existing site reveal system */
     const revealElements = document.querySelectorAll(
@@ -1208,6 +1254,7 @@ async function loadCatalogueProducts() {
             return `
                 <article
                     class="catalogue-card reveal-scale"
+                    data-product-id="${escapeHtml(String(product.id))}"
                     data-category="${escapeHtml(category)}"
                     data-tier="${escapeHtml(tier)}"
                     data-price="${Number.isFinite(price) ? price : 0}"
@@ -1248,7 +1295,7 @@ async function loadCatalogueProducts() {
         }
 
         initialiseCatalogueControls();
-        setupProductDetailModal();
+        setupProductCardLinks();
 
     } catch (error) {
         console.error("Catalogue error:", error);
@@ -1334,7 +1381,230 @@ function initialiseCatalogueControls() {
     applyFilters();
 }
 
+
+/* =========================================================
+   SHARED PRODUCT HELPERS (product page, home page, cards)
+   ========================================================= */
+
+// Tapping a catalogue card (anywhere except its buttons) opens the product page.
+function setupProductCardLinks() {
+    if (window.__mtsCardLinks) return;
+    window.__mtsCardLinks = true;
+    document.addEventListener("click", event => {
+        if (event.target.closest("a, button")) return;
+        const card = event.target.closest(".catalogue-card[data-product-id]");
+        if (!card) return;
+        location.href = "product.html?id=" + encodeURIComponent(card.dataset.productId);
+    });
+}
+
+// Same pricing rules the catalogue uses, in one reusable place.
+function mtsProductPricing(product) {
+    const type = String(product.project_type || "Custom Service");
+    const category = getProductCategory(product);
+    const tier = getProductTier(product);
+    const fixedPrice = getTierPrice(category, tier);
+    const price = fixedPrice !== undefined ? fixedPrice : Number(product.Price);
+    const hasPrice = Number.isFinite(price) &&
+        (fixedPrice !== undefined || (product.Price !== null && product.Price !== undefined));
+    const prefix = FROM_PRICE_TIERS[category]?.[tier] ? "From " : "";
+    return { type, category, tier, price, hasPrice, prefix };
+}
+
+function mtsPriceHtml(info) {
+    if (!info.hasPrice) return "";
+    return `<strong class="price-display" data-price-ngn="${info.price}" data-price-prefix="${info.prefix}">${info.prefix}${formatPrice(info.price)}</strong>`;
+}
+
+// Compact card used by the home page row and "You May Also Like".
+async function mtsProductCardHtml(product) {
+    const info = mtsProductPricing(product);
+    const image = await getProductImage(product.Image_url || product.front_image_url || "");
+    const name = product.Name || "Untitled Service";
+    return `
+        <a class="pcard" href="product.html?id=${encodeURIComponent(product.id)}">
+            <div class="pcard-img">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" loading="lazy">` : ""}</div>
+            <div class="pcard-body">
+                <span class="pcard-type">${escapeHtml(info.type.toUpperCase())}</span>
+                <h3>${escapeHtml(name)}</h3>
+                ${mtsPriceHtml(info)}
+            </div>
+        </a>`;
+}
+
+// Average colour of a product photo, used to tint its feed slide.
+function mtsTintFromImage(img) {
+    try {
+        const c = document.createElement("canvas");
+        c.width = c.height = 8;
+        const ctx = c.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, 8, 8);
+        const d = ctx.getImageData(0, 0, 8, 8).data;
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+            // skip near-white backdrops so the tint comes from the product itself
+            if (d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 235) continue;
+            r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+        if (!n) return null;
+        return `${Math.round(r / n * .8)},${Math.round(g / n * .8)},${Math.round(b / n * .8)}`;
+    } catch (e) {
+        return null; // image host blocked pixel access - keep the default tint
+    }
+}
+
+async function mtsFeedSlideHtml(product) {
+    const info = mtsProductPricing(product);
+    const image = await getProductImage(product.Image_url || product.front_image_url || "");
+    const name = product.Name || "Untitled Service";
+    const id = encodeURIComponent(product.id);
+    const buy = info.hasPrice
+        ? `<button type="button" class="feed-btn feed-btn-ghost buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-image="${escapeHtml(image || "")}" data-i18n="new.buyNow">Buy Now</button>`
+        : `<a class="feed-btn feed-btn-ghost" href="https://wa.me/2349124147362?text=${encodeURIComponent(`Hi Mars Tee Studio, I'd like to ask about "${name}".`)}" target="_blank" rel="noopener" data-i18n="new.enquire">Enquire</a>`;
+    return `
+        <article class="feed-slide">
+            <a class="feed-img" href="product.html?id=${id}" aria-label="${escapeHtml(name)}">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy">` : ""}</a>
+            <div class="feed-body">
+                <span class="feed-type">${escapeHtml(info.type.toUpperCase())}</span>
+                <h3>${escapeHtml(name)}</h3>
+                ${mtsPriceHtml(info)}
+                <p class="feed-desc">${escapeHtml(product.Description || "")}</p>
+                <div class="feed-actions">
+                    <a class="feed-btn feed-btn-primary" href="product.html?id=${id}" data-i18n="new.details">Details</a>
+                    ${buy}
+                    <a class="feed-btn feed-btn-light" href="catalogue.html?view=all" data-i18n="new.more">More</a>
+                </div>
+            </div>
+        </article>`;
+}
+
+// "Buy Now": make sure the item is in the cart (without stacking an extra
+// copy if it's already there) and go straight to checkout.
+document.addEventListener("click", event => {
+    const btn = event.target.closest(".buy-now-btn");
+    if (!btn) return;
+    const cart = getCart();
+    if (!cart.some(i => i.id === btn.dataset.id)) {
+        cart.push({
+            id: btn.dataset.id,
+            name: btn.dataset.name,
+            price: Number(btn.dataset.price) || 0,
+            image: btn.dataset.image || "",
+            qty: 1
+        });
+        saveCart(cart);
+    }
+    location.href = "checkout.html";
+});
+
+async function loadHomeProducts() {
+    const row = document.getElementById("homeProductsRow");
+    const section = document.getElementById("homeProducts");
+    if (!row || !section || !siteSupabaseClient) return;
+
+    try {
+        const { data, error } = await siteSupabaseClient
+            .from("Product").select("*").eq("Is_active", true);
+        if (error) throw error;
+        if (!data?.length) return;
+
+        const picks = [...data]
+            .sort((a, b) => Number(!!b.is_featured) - Number(!!a.is_featured))
+            .slice(0, 6);
+
+        row.innerHTML = (await Promise.all(picks.map(mtsFeedSlideHtml))).join("");
+        section.hidden = false;
+        document.documentElement.classList.add("has-product-feed");
+        refreshDisplayedPrices();
+        retranslate();
+
+        row.querySelectorAll(".feed-slide img").forEach(img => {
+            const tint = () => {
+                const t = mtsTintFromImage(img);
+                if (t) img.closest(".feed-slide").style.setProperty("--tint", t);
+            };
+            if (img.complete && img.naturalWidth) tint();
+            else img.addEventListener("load", tint, { once: true });
+        });
+    } catch (error) {
+        console.warn("Mars Tee Studio: home products unavailable.", error);
+    }
+}
+
+
+/* =========================================================
+   FOOTER "INSTALL APP" LINK + CATALOGUE SEARCH + TOAST
+   ========================================================= */
+function mtsToast(message) {
+    document.querySelectorAll(".mts-toast").forEach(t => t.remove());
+    const toast = document.createElement("div");
+    toast.className = "mts-toast";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 6000);
+}
+
+function setupInstallAppLink() {
+    const links = document.querySelectorAll(".install-app-link");
+    if (!links.length) return;
+    const installed = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+    links.forEach(link => {
+        if (installed) { link.hidden = true; return; }
+        link.addEventListener("click", async event => {
+            event.preventDefault();
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                return;
+            }
+            const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            mtsToast(ios
+                ? "On iPhone: tap the Share icon, then \"Add to Home Screen\"."
+                : "Open your browser menu (⋮) and choose \"Install app\" or \"Add to Home screen\".");
+        });
+    });
+}
+
+function setupCatalogueSearch() {
+    const input = document.getElementById("catalogueSearch");
+    const grid = document.querySelector(".catalogue-grid");
+    if (!input || !grid) return;
+
+    const apply = () => {
+        const q = input.value.trim().toLowerCase();
+        let shown = 0;
+        grid.querySelectorAll(".catalogue-card").forEach(card => {
+            const match = !q || card.textContent.toLowerCase().includes(q);
+            card.classList.toggle("search-hidden", !match);
+            if (match && !card.hidden) shown++;
+        });
+        let empty = grid.querySelector(".catalogue-empty-search");
+        if (q && shown === 0) {
+            if (!empty) {
+                empty = document.createElement("p");
+                empty.className = "catalogue-empty-search";
+                grid.appendChild(empty);
+            }
+            empty.textContent = "No products match \"" + input.value.trim() + "\".";
+        } else if (empty) {
+            empty.remove();
+        }
+    };
+    input.addEventListener("input", apply);
+    // cards are loaded asynchronously, so re-apply when the grid changes
+    new MutationObserver(apply).observe(grid, { childList: true });
+    const preset = new URLSearchParams(location.search).get("q");
+    if (preset) { input.value = preset; apply(); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupInstallAppLink();
+    setupCatalogueSearch();
+});
+
 loadCatalogueProducts();
+loadHomeProducts();
 
 /* =========================================================
    PORTFOLIO — uses the same safe client as Catalogue
@@ -1877,38 +2147,49 @@ let deferredInstallPrompt = null;
 
 function showInstallBanner() {
     if (document.querySelector(".pwa-install-banner")) return;
+    // Don't nag: once dismissed, stay quiet for a day.
+    try {
+        const last = Number(localStorage.getItem("mts_install_dismissed") || 0);
+        if (Date.now() - last < 24 * 60 * 60 * 1000) return;
+    } catch (e) {}
 
+    const SHOW_MS = 9000;
     const banner = document.createElement("div");
     banner.className = "pwa-install-banner";
+    banner.setAttribute("role", "dialog");
     banner.innerHTML = `
-        <img src="images/icon-192.png" alt="" class="pwa-install-icon">
-        <div class="pwa-install-text">
-            <strong>Install Mars Tee Studio</strong>
-            <span>Faster access, right from your home screen.</span>
-        </div>
-        <button type="button" class="button button-primary pwa-install-btn">Install</button>
         <button type="button" class="pwa-install-close" aria-label="Dismiss">&times;</button>
+        <div class="pwa-install-head">
+            <img src="images/icon-192.png" alt="" class="pwa-install-icon">
+            <strong data-i18n="new.installTitle">Install Mars Tee Studio</strong>
+        </div>
+        <p class="pwa-install-copy" data-i18n="new.installCopy">Install our app for faster access and offline browsing.</p>
+        <button type="button" class="pwa-install-btn" data-i18n="new.installBtn">Install Now</button>
+        <span class="pwa-install-progress" style="animation-duration:${SHOW_MS}ms"></span>
     `;
     document.body.appendChild(banner);
+    retranslate();
     requestAnimationFrame(() => banner.classList.add("is-visible"));
 
-    function dismiss() {
+    let timer = setTimeout(dismiss, SHOW_MS);
+    function dismiss(remember) {
+        clearTimeout(timer);
+        if (remember === true) {
+            try { localStorage.setItem("mts_install_dismissed", String(Date.now())); } catch (e) {}
+        }
         banner.classList.remove("is-visible");
         setTimeout(() => banner.remove(), 400);
     }
 
-    banner.querySelector(".pwa-install-close").addEventListener("click", dismiss);
+    banner.querySelector(".pwa-install-close").addEventListener("click", () => dismiss(true));
 
     banner.querySelector(".pwa-install-btn").addEventListener("click", async () => {
-        dismiss();
+        dismiss(true);
         if (!deferredInstallPrompt) return;
         deferredInstallPrompt.prompt();
         await deferredInstallPrompt.userChoice;
         deferredInstallPrompt = null;
     });
-
-    // Auto-dismiss if the visitor doesn't interact within 5 seconds.
-    setTimeout(dismiss, 5000);
 }
 
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -1916,6 +2197,23 @@ window.addEventListener("beforeinstallprompt", (event) => {
     deferredInstallPrompt = event;
     showInstallBanner();
 });
+
+function setupBackToTop() {
+    if (document.body.classList.contains("admin-page") || document.querySelector(".back-to-top")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "back-to-top";
+    btn.setAttribute("aria-label", "Back to top");
+    btn.textContent = "↑";
+    document.body.appendChild(btn);
+    const toggle = () => btn.classList.toggle("show", window.scrollY > 500);
+    window.addEventListener("scroll", toggle, { passive: true });
+    btn.addEventListener("click", () => {
+        const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
+    });
+    toggle();
+}
 
 console.log("%cMars Tee Studio", "font-size:22px;font-weight:800;color:#2563eb;");
 console.log("%cDigital experiences. Premium design. Built to impress.", "font-size:12px;color:#64748b;");

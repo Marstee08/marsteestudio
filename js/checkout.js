@@ -218,7 +218,32 @@
         });
     }
 
+    function setupPaymentPlanButton() {
+        const planButton = document.getElementById("paymentPlanButton");
+        if (!planButton) return;
+
+        planButton.addEventListener("click", () => {
+            const cart = typeof getCart === "function" ? getCart() : [];
+            if (!cart.length) return;
+
+            const values = getFormValues();
+            const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+            const lines = [
+                "Hi Mars Tee Studio, I'd like to ask about paying in installments for this order:",
+                "",
+                ...cart.map(i => `- ${i.name} x${i.qty} (${formatNaira(i.price * i.qty)})`),
+                "",
+                `Total: ${formatNaira(total)}`,
+                values.name ? `Name: ${values.name}` : "",
+                values.phone ? `Phone: ${values.phone}` : ""
+            ].filter(Boolean);
+
+            window.open(`https://wa.me/2349124147362?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
+        setupPaymentPlanButton();
         renderSummary();
         setupPaystackButton();
         setupWhatsAppOrderButton();

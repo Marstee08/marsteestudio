@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Tips, guides and stories from Mars Tee Studio - on web design, pricing, and building things that matter.">
+<meta name="description" content="View product details, gallery and pricing at Mars Tee Studio.">
 <meta name="author" content="Mars Tee Studio">
-<title>Blog | Mars Tee Studio</title>
+<title>Product | Mars Tee Studio</title>
 
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="images/favicon-32x32.png" type="image/png" sizes="32x32">
@@ -19,14 +19,14 @@
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mars Tee Studio">
-<meta property="og:title" content="Blog | Mars Tee Studio">
-<meta property="og:description" content="Tips, guides and stories from Mars Tee Studio - on web design, pricing, and building things that matter.">
+<meta property="og:title" content="Product | Mars Tee Studio">
+<meta property="og:description" content="View product details, gallery and pricing at Mars Tee Studio.">
 <meta property="og:image" content="https://marsteestudio.vercel.app/images/og-share-image.jpg">
-<meta property="og:url" content="https://marsteestudio.vercel.app/blog.html">
+<meta property="og:url" content="https://marsteestudio.vercel.app/product.html">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Blog | Mars Tee Studio">
-<meta name="twitter:description" content="Tips, guides and stories from Mars Tee Studio - on web design, pricing, and building things that matter.">
+<meta name="twitter:title" content="Product | Mars Tee Studio">
+<meta name="twitter:description" content="View product details, gallery and pricing at Mars Tee Studio.">
 <meta name="twitter:image" content="https://marsteestudio.vercel.app/images/og-share-image.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,12 +36,14 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="css/icons.css">
 </head>
+
 <body>
+
 <div class="page-loader" id="pageLoader">
 <div class="page-loader-ring">
 <img src="images/icon-192.png" alt="" class="page-loader-logo">
 </div>
-<div class="page-loader-text">Loading articles…</div>
+<div class="page-loader-text">Loading product details…</div>
 </div>
 
 
@@ -56,10 +58,10 @@
 <a href="index.html" class="nav-link" data-i18n="nav.home">Home</a>
 <a href="about.html" class="nav-link" data-i18n="nav.about">About</a>
 <a href="services.html" class="nav-link" data-i18n="nav.services">Services</a>
-<a href="catalogue.html" class="nav-link" data-i18n="nav.catalogue">Catalogue</a>
+<a href="catalogue.html" class="nav-link active" data-i18n="nav.catalogue">Catalogue</a>
 <a href="portfolio.html" class="nav-link" data-i18n="nav.portfolio">Portfolio</a>
 <a href="process.html" class="nav-link" data-i18n="nav.process">Process</a>
-<a href="blog.html" class="nav-link active" data-i18n="nav.blog">Blog</a>
+<a href="blog.html" class="nav-link" data-i18n="nav.blog">Blog</a>
 <a href="reviews.html" class="nav-link" data-i18n="nav.reviews">Reviews</a>
 <a href="contact.html" class="nav-button" data-i18n="nav.letstalk">Let's Talk</a>
 
@@ -93,119 +95,24 @@
 </header>
 
 <main>
-
-<section class="page-hero">
+<section class="product-page">
 <div class="container">
-
-<span class="section-label"><span class="label-emoji" aria-hidden="true">📝</span> <span data-i18n="blog.eyebrow">THE BLOG</span></span>
-
-<h1 data-i18n-html="blog.heroTitle">
-Ideas, guides and stories<br>
-<span>from the studio.</span>
-</h1>
-
-<p data-i18n="blog.heroText">
-Practical thoughts on web design, pricing, and building digital things that actually work for your business.
-</p>
-
+<a href="catalogue.html" class="product-back" data-i18n="new.backToCatalogue">← Back to catalogue</a>
+<div id="productRoot"><p class="product-state">Loading product…</p></div>
+<div class="product-related" id="productRelated" hidden>
+<h2 data-i18n="new.youMayAlsoLike">You May Also Like</h2>
+<div class="pcard-row" id="productRelatedRow"></div>
+</div>
 </div>
 </section>
-
-<section class="section-padding">
-<div class="container">
-
-
-<div class="blog-featured">
-<a href="blog-how-much-should-a-website-cost-in-nigeria.html" class="blog-featured-cover"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" class=""><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M22 12h-3M12 22v-3M2 12h3"/></svg></a>
-<div class="blog-featured-content">
-<span class="blog-featured-badge" data-i18n="blog.latestPost">Latest Post</span>
-<div class="blog-card-meta">
-<span class="blog-category">Pricing</span>
-<span>January 12, 2026</span>
-<span>&middot;</span>
-<span>5 min read</span>
-</div>
-<h2><a href="blog-how-much-should-a-website-cost-in-nigeria.html">How Much Should a Website Really Cost in Nigeria?</a></h2>
-<p>There's no single right answer - but there is a right answer for your situation. Here's how to think about it.</p>
-<a href="blog-how-much-should-a-website-cost-in-nigeria.html" class="button button-primary" data-i18n="blog.readFullArticle">Read Full Article &rarr;</a>
-</div>
-</div>
-
-
-<div class="blog-filter">
-<button type="button" class="blog-filter-btn is-active" data-filter="all" data-i18n="blog.filterAll">All</button>
-<button type="button" class="blog-filter-btn" data-filter="Digital Experiences" data-i18n="blog.filterDigitalExp">Digital Experiences</button>
-<button type="button" class="blog-filter-btn" data-filter="Guides" data-i18n="blog.filterGuides">Guides</button>
-<button type="button" class="blog-filter-btn" data-filter="Pricing" data-i18n="blog.filterPricing">Pricing</button>
-<button type="button" class="blog-filter-btn" data-filter="Process" data-i18n="blog.filterProcess">Process</button>
-<button type="button" class="blog-filter-btn" data-filter="Tips" data-i18n="blog.filterTips">Tips</button>
-</div>
-
-<div class="blog-grid">
-
-<div class="blog-card blog-reveal" data-category="Guides">
-<div class="blog-card-cover"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" class=""><path d="m12 2 9 10-9 10L3 12Z"/><path d="m3 12 9 2 9-2"/></svg></div>
-<div class="blog-card-body">
-<div class="blog-card-meta">
-<span class="blog-category">Guides</span>
-<span>January 20, 2026</span>
-</div>
-<h3><a href="blog-basic-standard-premium-or-luxury.html">Basic, Standard, Premium or Luxury: Which Package Do You Actually Need?</a></h3>
-<p>More expensive isn't automatically better. Here's how to match your business stage to the right tier.</p>
-<a href="blog-basic-standard-premium-or-luxury.html" class="blog-card-readmore" data-i18n="blog.readMore">Read More &rarr;</a>
-</div>
-</div>
-
-<div class="blog-card blog-reveal" data-category="Tips">
-<div class="blog-card-cover"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" class=""><path d="M9 18h6M10 22h4"/><path d="M8.5 14.5A6 6 0 1 1 15.5 14c-.8.6-1.2 1.4-1.3 2H9.8c-.1-.6-.5-1.4-1.3-1.5Z"/></svg></div>
-<div class="blog-card-body">
-<div class="blog-card-meta">
-<span class="blog-category">Tips</span>
-<span>February 3, 2026</span>
-</div>
-<h3><a href="blog-5-signs-your-business-needs-a-website.html">5 Signs Your Small Business Needs a Website in 2026</a></h3>
-<p>Social media is great - but it isn't yours. Here's when a website stops being optional.</p>
-<a href="blog-5-signs-your-business-needs-a-website.html" class="blog-card-readmore" data-i18n="blog.readMore">Read More &rarr;</a>
-</div>
-</div>
-
-<div class="blog-card blog-reveal" data-category="Digital Experiences">
-<div class="blog-card-cover"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" class=""><path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/></svg></div>
-<div class="blog-card-body">
-<div class="blog-card-meta">
-<span class="blog-category">Digital Experiences</span>
-<span>February 14, 2026</span>
-</div>
-<h3><a href="blog-digital-experiences-for-special-moments.html">Proposal, Birthday, or Wedding? How a Digital Experience Makes It Unforgettable</a></h3>
-<p>A regular message gets read once and forgotten. A digital experience gets replayed, screenshotted, and remembered.</p>
-<a href="blog-digital-experiences-for-special-moments.html" class="blog-card-readmore" data-i18n="blog.readMore">Read More &rarr;</a>
-</div>
-</div>
-
-<div class="blog-card blog-reveal" data-category="Process">
-<div class="blog-card-cover"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" class=""><path d="m5 12 4 4L19 6"/><circle cx="12" cy="12" r="10"/></svg></div>
-<div class="blog-card-body">
-<div class="blog-card-meta">
-<span class="blog-category">Process</span>
-<span>February 28, 2026</span>
-</div>
-<h3><a href="blog-what-we-need-from-you-before-we-start.html">What We Need From You Before We Start Your Project</a></h3>
-<p>The single biggest thing that speeds up any project isn't budget - it's having your materials ready before we start.</p>
-<a href="blog-what-we-need-from-you-before-we-start.html" class="blog-card-readmore" data-i18n="blog.readMore">Read More &rarr;</a>
-</div>
-</div>
-
-</div>
-
-</div>
-</section>
-
 </main>
 <footer class="site-footer">
+
 <div class="container">
+
 <div class="footer-main">
 
-<div class="footer-column footer-brand">
+<div class="footer-brand">
 
 <a href="index.html" class="logo">
 <img src="images/mars-tee-logo.png" alt="Mars Tee Studio" class="logo-img">
@@ -278,9 +185,9 @@ Creative digital solutions, thoughtful design and experiences built around your 
 </div>
 
 </footer>
-<script src="js/icons.js"></script>
-<script src="js/blog.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/icons.js"></script>
 <script src="script.js"></script>
+<script src="js/product.js"></script>
 </body>
 </html>

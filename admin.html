@@ -406,6 +406,80 @@
             }
         }
 
+
+        /* ===== Sidebar layout (modelled on the reference admin dashboard) ===== */
+        .admin-container:has(#dashboardSection:not(.hidden)) { width: min(1320px, 95%); padding-top: 40px; }
+        .admin-shell { display: grid; grid-template-columns: 250px 1fr; gap: 28px; align-items: start; }
+        .admin-sidebar {
+            position: sticky; top: 24px; display: flex; flex-direction: column; gap: 18px;
+            background: rgba(255,255,255,.035); border: 1px solid var(--admin-border);
+            border-radius: 16px; padding: 18px;
+        }
+        .admin-brand { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--admin-border); }
+        .admin-brand img { height: 44px; width: auto; }
+        .admin-brand strong { display: block; font-size: .95rem; }
+        .admin-brand span { font-size: .75rem; color: var(--admin-text-muted); }
+        .admin-nav { display: flex; flex-direction: column; gap: 6px; }
+        .admin-nav-btn {
+            display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px;
+            border: 0; border-radius: 12px; background: transparent; color: var(--admin-text);
+            font: inherit; font-weight: 600; font-size: .92rem; text-align: left;
+            text-decoration: none; cursor: pointer;
+        }
+        .admin-nav-btn:hover { background: rgba(255,255,255,.07); }
+        .admin-nav-btn.active { background: #1479ff; color: #fff; box-shadow: 0 8px 20px rgba(20,121,255,.35); }
+        .admin-signout { margin-top: 6px; color: #ff8a8a; border-top: 1px solid var(--admin-border); border-radius: 0 0 12px 12px; padding-top: 16px; }
+        .admin-main { min-width: 0; }
+        .admin-main h1, .admin-main h2, .admin-main h3 { color: var(--admin-text); }
+        .admin-title span { color: #1479ff; }
+        .admin-main > section:not(.hidden) ~ section:not(.hidden) { margin-top: 30px; }
+        .admin-main > section[data-view="reviews"] { margin-top: 0 !important; }
+        .admin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 28px; }
+        .admin-card {
+            display: flex; flex-direction: column; gap: 10px; text-align: left; cursor: pointer;
+            padding: 24px; border-radius: 16px; font: inherit; color: var(--admin-text);
+            background: rgba(255,255,255,.05); border: 1px solid var(--admin-border);
+            transition: transform .2s ease, border-color .2s ease;
+        }
+        .admin-card:hover { transform: translateY(-3px); border-color: #1479ff; }
+        .admin-card strong { font-size: 1.15rem; }
+        .admin-card span:last-child { color: var(--admin-text-muted); font-size: .9rem; line-height: 1.5; }
+        .admin-card-icon { font-size: 1.8rem; }
+        @media (max-width: 900px) {
+            .admin-shell { grid-template-columns: minmax(0, 1fr); }
+            .admin-sidebar { min-width: 0; }
+            .admin-sidebar { position: static; padding: 14px; }
+            .admin-brand { padding-bottom: 12px; }
+            .admin-nav { flex-direction: row; overflow-x: auto; padding-bottom: 2px; }
+            .admin-nav-btn { width: auto; white-space: nowrap; flex: 0 0 auto; }
+            .admin-signout { margin-top: 0; border-top: 0; border-radius: 12px; padding-top: 12px; }
+        }
+
+        .orders-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 8px; }
+        .orders-toolbar input, .orders-toolbar select {
+            padding: 12px 14px; border-radius: 12px; border: 1px solid var(--admin-border);
+            background: rgba(255,255,255,.05); color: var(--admin-text); font: inherit; min-width: 0;
+        }
+        .orders-toolbar input { flex: 1 1 240px; }
+        .orders-list { display: grid; gap: 14px; margin-top: 14px; }
+        .order-card { padding: 18px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--admin-border); display: grid; gap: 10px; }
+        .order-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .order-top strong { font-size: 1.05rem; }
+        .order-meta { color: var(--admin-text-muted); font-size: .86rem; line-height: 1.6; word-break: break-word; }
+        .order-items { margin: 0; padding-left: 18px; font-size: .92rem; line-height: 1.7; }
+        .order-total { font-size: 1.2rem; font-weight: 800; color: #ffd60a; }
+        .order-badge { padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; text-transform: capitalize; }
+        .order-badge.pending { background: rgba(255,153,51,.18); color: #ffb366; }
+        .order-badge.paid, .order-badge.completed { background: rgba(37,211,102,.18); color: #4ade80; }
+        .order-badge.cancelled, .order-badge.failed { background: rgba(255,90,90,.18); color: #ff8a8a; }
+        .order-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .order-actions select, .order-actions button, .order-actions a {
+            padding: 10px 14px; border-radius: 10px; border: 1px solid var(--admin-border); font: inherit;
+            font-size: .88rem; font-weight: 600; background: rgba(255,255,255,.07); color: var(--admin-text); text-decoration: none; cursor: pointer;
+        }
+        .order-actions .order-save { background: #1479ff; border-color: #1479ff; color: #fff; }
+        .order-actions .order-wa { background: #25d366; border-color: #25d366; color: #fff; }
+        .orders-note { padding: 18px; border-radius: 14px; border: 1px dashed var(--admin-border); line-height: 1.7; }
     </style>
 </head>
 
@@ -496,38 +570,66 @@
             class="hidden"
         >
 
-            <header class="admin-header">
+            <div class="admin-shell">
 
-                <div>
-
-                    <p class="section-label">
-                        MARS TEE STUDIO
-                    </p>
-
-                    <h1 class="admin-title">
-                        Catalogue <span>Admin</span>
-                    </h1>
-
-                    <p class="admin-subtitle">
-                        Manage your Product and services from anywhere.
-                    </p>
-
+            <aside class="admin-sidebar">
+                <div class="admin-brand">
+                    <img src="images/mars-tee-logo.png" alt="Mars Tee Studio">
+                    <div><strong>Admin Dashboard</strong><span>Mars Tee Studio</span></div>
                 </div>
+                <nav class="admin-nav">
+                    <button type="button" class="admin-nav-btn active" data-go="home">🏠 <span>Dashboard</span></button>
+                    <button type="button" class="admin-nav-btn" data-go="orders">🧾 <span>Orders</span></button>
+                    <button type="button" class="admin-nav-btn" data-go="products">🛍️ <span>Products</span></button>
+                    <button type="button" class="admin-nav-btn" data-go="reviews">⭐ <span>Reviews</span></button>
+                    <a class="admin-nav-btn" href="index.html" target="_blank" rel="noopener">🌐 <span>View website</span></a>
+                </nav>
+                <button type="button" class="admin-nav-btn admin-signout" id="logoutButton">🚪 <span>Sign out</span></button>
+            </aside>
 
+            <div class="admin-main">
 
-                <div class="admin-actions">
-
-                    <button
-                        class="admin-button"
-                        type="button"
-                        id="logoutButton"
-                    >
-                        Log out
+            <section data-view="home" class="admin-home">
+                <h1 class="admin-title">Welcome, <span>Admin</span></h1>
+                <p class="admin-subtitle">Manage your website from here.</p>
+                <div class="admin-cards">
+                    <button type="button" class="admin-card" data-go="orders">
+                        <span class="admin-card-icon">🧾</span>
+                        <strong>Orders</strong>
+                        <span>See every order, check payment status and contact customers.</span>
                     </button>
-
+                    <button type="button" class="admin-card" data-go="products">
+                        <span class="admin-card-icon">🛍️</span>
+                        <strong>Products</strong>
+                        <span>Add, edit and remove items in your catalogue, with a live preview.</span>
+                    </button>
+                    <button type="button" class="admin-card" data-go="reviews">
+                        <span class="admin-card-icon">⭐</span>
+                        <strong>Reviews</strong>
+                        <span>Approve or delete customer reviews before they go public.</span>
+                    </button>
                 </div>
+            </section>
 
-            </header>
+            <section data-view="orders" class="admin-orders hidden">
+                <h1 class="admin-title">Store <span>Orders</span></h1>
+                <p class="admin-subtitle">Orders placed through your checkout. Paid orders are confirmed with Paystack automatically.</p>
+                <div class="orders-toolbar">
+                    <input type="search" id="ordersSearch" placeholder="Search name, email, phone or reference" autocomplete="off">
+                    <select id="ordersFilter" aria-label="Filter by status">
+                        <option value="all">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="failed">Failed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button type="button" id="ordersRefresh" class="admin-nav-btn" style="width:auto">↻ Refresh</button>
+                </div>
+                <p id="ordersSummary" class="admin-subtitle"></p>
+                <div id="ordersList" class="orders-list"></div>
+            </section>
+
 
 
 
@@ -535,7 +637,7 @@
                  PRODUCT FORM
             ====================================== -->
 
-            <section
+            <section data-view="products"
                 class="admin-panel reveal"
                 id="productFormPanel"
             >
@@ -994,7 +1096,7 @@
                  Product LIST
             ====================================== -->
 
-            <section
+            <section data-view="products"
                 class="admin-panel reveal"
                 style="margin-top:30px;"
             >
@@ -1023,7 +1125,7 @@
                  REVIEWS
             ====================================== -->
 
-            <section
+            <section data-view="reviews"
                 class="admin-panel reveal"
                 style="margin-top:30px;"
             >
@@ -1046,6 +1148,9 @@
 
             </section>
 
+
+            </div>
+            </div>
 
         </section>
 
@@ -1092,7 +1197,87 @@ function showDashboard(){
     dashboardSection?.querySelectorAll(".reveal").forEach(el => el.classList.add("active"));
     loadProducts();
     loadReviews();
+    showView("home");
 }
+function showView(name){
+    document.querySelectorAll("[data-view]").forEach(el=>el.classList.toggle("hidden",el.dataset.view!==name));
+    document.querySelectorAll(".admin-nav-btn[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===name));
+    window.scrollTo({top:0});
+    if(name==="orders") loadOrders();
+}
+document.addEventListener("click",e=>{
+    const go=e.target.closest("[data-go]");
+    if(go) showView(go.dataset.go);
+});
+
+/* ===== Orders view ===== */
+let allOrders = [];
+const ordersEsc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ordersNaira = n => "₦" + Math.round(Number(n) || 0).toLocaleString("en-NG");
+
+async function loadOrders(){
+    const list = document.getElementById("ordersList");
+    list.innerHTML = '<p class="admin-subtitle">Loading orders…</p>';
+    try {
+        const { data, error } = await supabaseClient.from("Order").select("*").order("created_at", { ascending: false }).limit(300);
+        if (error) throw error;
+        allOrders = data || [];
+        renderOrders();
+    } catch (err) {
+        list.innerHTML = '<div class="orders-note"><strong>Orders could not be loaded.</strong><br>' + ordersEsc(err.message || err) +
+            '<br><br>Make sure you are logged in with the admin account, then press Refresh.</div>';
+        document.getElementById("ordersSummary").textContent = "";
+    }
+}
+
+function renderOrders(){
+    const q = document.getElementById("ordersSearch").value.trim().toLowerCase();
+    const status = document.getElementById("ordersFilter").value;
+    const list = document.getElementById("ordersList");
+    const rows = allOrders.filter(o => {
+        if (status !== "all" && String(o.status || "").toLowerCase() !== status) return false;
+        if (!q) return true;
+        return [o.customer_name, o.customer_email, o.customer_phone, o.paystack_reference].join(" ").toLowerCase().includes(q);
+    });
+    const paidTotal = allOrders.filter(o => String(o.status).toLowerCase() === "paid" || String(o.status).toLowerCase() === "completed").reduce((s, o) => s + Number(o.total_amount || 0), 0);
+    document.getElementById("ordersSummary").textContent = rows.length + " of " + allOrders.length + " orders shown · Paid so far: " + ordersNaira(paidTotal);
+    if (!rows.length) { list.innerHTML = '<p class="admin-subtitle">No orders match.</p>'; return; }
+
+    list.innerHTML = rows.map(o => {
+        const st = String(o.status || "pending").toLowerCase();
+        const items = Array.isArray(o.items) ? o.items : [];
+        const date = o.created_at ? new Date(o.created_at).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }) : "";
+        const phone = String(o.customer_phone || "").replace(/[^0-9]/g, "");
+        const wa = phone ? "https://wa.me/" + (phone.startsWith("0") ? "234" + phone.slice(1) : phone) + "?text=" + encodeURIComponent("Hi " + (o.customer_name || "") + ", this is Mars Tee Studio about your order.") : "";
+        return '<article class="order-card" data-id="' + ordersEsc(o.id) + '">' +
+            '<div class="order-top"><strong>' + ordersEsc(o.customer_name || "Unnamed customer") + '</strong><span class="order-badge ' + ordersEsc(st) + '">' + ordersEsc(st) + '</span></div>' +
+            '<div class="order-meta">' + ordersEsc(date) + '<br>' + ordersEsc(o.customer_email || "") + ' · ' + ordersEsc(o.customer_phone || "") + '<br>Ref: ' + ordersEsc(o.paystack_reference || "none") + '</div>' +
+            '<ul class="order-items">' + items.map(i => '<li>' + ordersEsc(i.name) + ' × ' + ordersEsc(i.qty) + ' (' + ordersNaira(Number(i.price) * Number(i.qty)) + ')</li>').join("") + '</ul>' +
+            '<div class="order-total">' + ordersNaira(o.total_amount) + '</div>' +
+            '<div class="order-actions"><select class="order-status">' +
+            ["pending","paid","failed","completed","cancelled"].map(s => '<option value="' + s + '"' + (s === st ? " selected" : "") + '>' + s + '</option>').join("") +
+            '</select><button type="button" class="order-save">Save status</button>' + (wa ? '<a class="order-wa" href="' + wa + '" target="_blank" rel="noopener">WhatsApp customer</a>' : "") + '</div>' +
+            '</article>';
+    }).join("");
+}
+
+document.addEventListener("click", async e => {
+    const save = e.target.closest(".order-save");
+    if (!save) return;
+    const card = save.closest(".order-card");
+    const status = card.querySelector(".order-status").value;
+    save.disabled = true; save.textContent = "Saving…";
+    const { error } = await supabaseClient.from("Order").update({ status }).eq("id", card.dataset.id);
+    save.disabled = false;
+    if (error) { save.textContent = "Save status"; alert("Could not update: " + error.message); return; }
+    const row = allOrders.find(o => String(o.id) === card.dataset.id);
+    if (row) row.status = status;
+    renderOrders();
+});
+document.getElementById("ordersSearch").addEventListener("input", renderOrders);
+document.getElementById("ordersFilter").addEventListener("change", renderOrders);
+document.getElementById("ordersRefresh").addEventListener("click", loadOrders);
+
 function showLogin(){
     dashboardSection?.classList.add("hidden");
     loginSection?.classList.remove("hidden");
