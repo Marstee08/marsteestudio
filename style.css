@@ -8469,3 +8469,53 @@ html.has-product-feed { scroll-snap-type: y proximity; }
 }
 .footer-column a.install-app-link[hidden] { display: none; }
 .checkout-plan-btn { margin-top: 10px; }
+
+/* =========================================================
+   CHECKOUT (card layout, single column)
+   ========================================================= */
+.checkout-head { padding: 26px 0 0; }
+.checkout-head h1 { font-size: clamp(2rem, 7vw, 2.8rem); margin: 6px 0 0; }
+.checkout-layout { grid-template-columns: minmax(0, 640px); justify-content: center; gap: 22px; }
+.checkout-form-card, .checkout-summary { border-radius: 18px; padding: 24px; }
+.checkout-summary { position: static; }
+.checkout-form-card h2, .checkout-summary h2 { display: flex; align-items: center; gap: 12px; font-size: 1.25rem; }
+.ck-ic::before {
+  content: ""; width: 24px; height: 24px; flex: 0 0 24px; background: var(--blue);
+  -webkit-mask: var(--ic) center / contain no-repeat; mask: var(--ic) center / contain no-repeat;
+}
+.ck-user { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E"); }
+.ck-bag { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0'/%3E%3C/svg%3E"); }
+.checkout-item { align-items: center; gap: 12px; }
+.checkout-item-thumb { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 10px; object-fit: cover; background: #fff; }
+.checkout-item-name { flex: 1 1 auto; }
+.checkout-actions { margin-top: 18px; }
+.checkout-actions .checkout-pay-btn { padding: 16px; font-size: 1.05rem; }
+.checkout-secure { margin: 14px 0 0; text-align: center; font-size: .85rem; color: var(--muted); }
+
+/* ---- home: search + feature strip + related fallback ---- */
+.home-search { margin: 0 auto 26px; max-width: 640px; }
+.home-feed { padding-top: 22px; }
+.home-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 900px; margin: 30px auto 0; text-align: center; }
+.home-features > div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; border-radius: 14px; border: 1px solid var(--border); background: var(--white); font-size: .78rem; line-height: 1.4; color: var(--muted); }
+.home-features strong { font-size: .88rem; color: var(--text); }
+.hf-ic { width: 26px; height: 26px; background: var(--blue); -webkit-mask: var(--ic) center / contain no-repeat; mask: var(--ic) center / contain no-repeat; }
+.hf-bolt { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9z'/%3E%3C/svg%3E"); }
+.hf-shield { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E"); }
+.hf-card { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2'/%3E%3Cpath d='M2 10h20'/%3E%3C/svg%3E"); }
+@media (max-width: 520px) { .home-features { grid-template-columns: 1fr; } .home-features > div { flex-direction: row; text-align: left; gap: 12px; padding: 12px 16px; } .home-features > div > span:last-child { display: block; } .hf-ic { flex: 0 0 26px; } }
+.related-empty { padding: 26px; border: 1px dashed var(--border); border-radius: 16px; text-align: center; width: 100%; }
+.related-empty p { margin: 0 0 14px; }
+
+/* ---- feed slide fixes: visible buttons in every theme, image box sized to the photo ---- */
+.feed-slide .feed-btn-primary, .feed-slide .feed-btn-ghost { color: #fff !important; }
+.feed-slide .feed-btn-light { color: #0a1020 !important; background: #fff; }
+.feed-slide { justify-content: center; }
+.feed-img { flex: 0 0 auto; }
+.feed-img img { width: 100%; height: auto; max-height: 58svh; object-fit: contain; }
+@media (min-width: 900px) {
+  .feed-slide { justify-content: flex-start; }
+  .feed-img { height: 300px; }
+  .feed-img img { height: 100%; max-height: none; }
+}
+
+.checkout-total-local { margin: 6px 0 0; text-align: right; font-size: .85rem; color: var(--muted); }

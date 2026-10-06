@@ -100,6 +100,32 @@
 
 <main>
 
+<section class="home-feed" id="homeProducts" hidden>
+<div class="container">
+<form class="catalogue-search home-search" action="catalogue.html" method="get" role="search">
+<input type="search" name="q" placeholder="Search products…" data-i18n-placeholder="new.searchPlaceholder" aria-label="Search products" autocomplete="off">
+<input type="hidden" name="view" value="all">
+</form>
+</div>
+<div class="container">
+<div class="home-products-head">
+<div>
+<span class="section-label" data-i18n="new.fromCatalogue">FROM OUR CATALOGUE</span>
+<h2 data-i18n-html="new.exploreProducts">Explore our <span>products</span></h2>
+</div>
+<a href="catalogue.html?view=all" class="home-products-link" data-i18n="new.viewAll">View all →</a>
+</div>
+</div>
+<div class="feed" id="homeProductsRow"></div>
+<div class="container">
+<div class="home-features">
+<div><span class="hf-ic hf-bolt"></span><strong data-i18n="new.featFast">Fast Turnaround</strong><span data-i18n="new.featFastText">Clear timelines from start to delivery</span></div>
+<div><span class="hf-ic hf-shield"></span><strong data-i18n="new.featQuality">Quality Assured</strong><span data-i18n="new.featQualityText">Every project checked before delivery</span></div>
+<div><span class="hf-ic hf-card"></span><strong data-i18n="new.featFlexible">Flexible Payments</strong><span data-i18n="new.featFlexibleText">Pay online or ask about a plan</span></div>
+</div>
+</div>
+</section>
+
 <section class="hero-section">
 <div class="container hero-grid">
 
@@ -200,18 +226,7 @@ Discover Mars Tee Studio →
 
 </div>
 </section>
-<section class="home-feed" id="homeProducts" hidden>
-<div class="container">
-<div class="home-products-head">
-<div>
-<span class="section-label" data-i18n="new.fromCatalogue">FROM OUR CATALOGUE</span>
-<h2 data-i18n-html="new.exploreProducts">Explore our <span>products</span></h2>
-</div>
-<a href="catalogue.html?view=all" class="home-products-link" data-i18n="new.viewAll">View all →</a>
-</div>
-</div>
-<div class="feed" id="homeProductsRow"></div>
-</section>
+
 <section class="services-preview section-padding">
 <div class="container">
 

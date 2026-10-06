@@ -480,6 +480,14 @@
         .order-actions .order-save { background: #1479ff; border-color: #1479ff; color: #fff; }
         .order-actions .order-wa { background: #25d366; border-color: #25d366; color: #fff; }
         .orders-note { padding: 18px; border-radius: 14px; border: 1px dashed var(--admin-border); line-height: 1.7; }
+
+        .mode-banner { margin-top: 18px; padding: 14px 18px; border-radius: 14px; line-height: 1.6; font-size: .92rem; border: 1px solid var(--admin-border); }
+        .mode-banner.test { background: rgba(255,179,102,.12); border-color: rgba(255,179,102,.4); color: #ffcf99; }
+        .mode-banner.live { background: rgba(74,222,128,.12); border-color: rgba(74,222,128,.4); color: #86efac; }
+        .mode-banner.bad { background: rgba(255,90,90,.14); border-color: rgba(255,90,90,.45); color: #ffb0b0; }
+        .nav-badge { margin-left: auto; min-width: 22px; padding: 2px 7px; border-radius: 999px; background: #ff4d4d; color: #fff; font-size: .75rem; text-align: center; }
+        .order-toast { position: fixed; top: 18px; right: 18px; z-index: 99998; max-width: min(92vw, 380px); padding: 16px 18px; border-radius: 14px; background: #0f7a3d; color: #fff; box-shadow: 0 18px 44px rgba(0,0,0,.45); cursor: pointer; line-height: 1.5; }
+        .order-toast strong { display: block; font-size: 1.05rem; }
     </style>
 </head>
 
@@ -579,7 +587,7 @@
                 </div>
                 <nav class="admin-nav">
                     <button type="button" class="admin-nav-btn active" data-go="home">🏠 <span>Dashboard</span></button>
-                    <button type="button" class="admin-nav-btn" data-go="orders">🧾 <span>Orders</span></button>
+                    <button type="button" class="admin-nav-btn" data-go="orders">🧾 <span>Orders</span><b id="ordersBadge" class="nav-badge" hidden>0</b></button>
                     <button type="button" class="admin-nav-btn" data-go="products">🛍️ <span>Products</span></button>
                     <button type="button" class="admin-nav-btn" data-go="reviews">⭐ <span>Reviews</span></button>
                     <a class="admin-nav-btn" href="index.html" target="_blank" rel="noopener">🌐 <span>View website</span></a>
@@ -592,6 +600,7 @@
             <section data-view="home" class="admin-home">
                 <h1 class="admin-title">Welcome, <span>Admin</span></h1>
                 <p class="admin-subtitle">Manage your website from here.</p>
+                <div id="paymentModeBanner" class="mode-banner" hidden></div>
                 <div class="admin-cards">
                     <button type="button" class="admin-card" data-go="orders">
                         <span class="admin-card-icon">🧾</span>
@@ -1198,17 +1207,85 @@ function showDashboard(){
     loadProducts();
     loadReviews();
     showView("home");
+    startOrderAlerts();
+    checkPaymentMode();
 }
 function showView(name){
     document.querySelectorAll("[data-view]").forEach(el=>el.classList.toggle("hidden",el.dataset.view!==name));
     document.querySelectorAll(".admin-nav-btn[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===name));
     window.scrollTo({top:0});
-    if(name==="orders") loadOrders();
+    if(name==="orders"){ unseenPaid = 0; const b = document.getElementById("ordersBadge"); if(b) b.hidden = true; loadOrders(); }
 }
 document.addEventListener("click",e=>{
     const go=e.target.closest("[data-go]");
     if(go) showView(go.dataset.go);
 });
+
+/* ===== Live order alerts + payment mode check ===== */
+let unseenPaid = 0, ordersChannel = null;
+const seenPaidIds = new Set();
+
+function beep(){
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [880, 1175].forEach((f, i) => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.18);
+            g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.18 + 0.16);
+            o.start(ctx.currentTime + i * 0.18); o.stop(ctx.currentTime + i * 0.18 + 0.17);
+        });
+    } catch (e) {}
+}
+
+function announcePaidOrder(o){
+    if (!o || seenPaidIds.has(o.id)) return;
+    seenPaidIds.add(o.id);
+    unseenPaid++;
+    const badge = document.getElementById("ordersBadge");
+    if (badge) { badge.textContent = unseenPaid; badge.hidden = false; }
+    const toast = document.createElement("div");
+    toast.className = "order-toast";
+    toast.innerHTML = "<strong>💰 New paid order</strong>" + ordersEsc(o.customer_name || "A customer") + " · " + ordersNaira(o.total_amount) + "<br><small>Tap to view orders</small>";
+    toast.addEventListener("click", () => { toast.remove(); showView("orders"); });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 15000);
+    beep();
+    try { if ("Notification" in window && Notification.permission === "granted") new Notification("New paid order", { body: (o.customer_name || "A customer") + " paid " + ordersNaira(o.total_amount) }); } catch (e) {}
+    if (!document.querySelector('[data-view="orders"]').classList.contains("hidden")) loadOrders();
+}
+
+function startOrderAlerts(){
+    if (ordersChannel || !supabaseClient.channel) return;
+    try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch (e) {}
+    ordersChannel = supabaseClient.channel("admin-orders")
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "Order" }, payload => {
+            if (payload.new && String(payload.new.status).toLowerCase() === "paid") announcePaidOrder(payload.new);
+        })
+        .subscribe();
+}
+
+async function checkPaymentMode(){
+    const box = document.getElementById("paymentModeBanner");
+    if (!box) return;
+    try {
+        const js = await fetch("js/checkout.js").then(r => r.text());
+        const m = /pk_(test|live)_/.exec(js);
+        const siteMode = m ? m[1] : "unknown";
+        const { data, error } = await supabaseClient.functions.invoke("verify-payment", { body: { diagnose: true } });
+        if (error) throw error;
+        const sk = data && data.secretKeyMode;
+        let cls = "bad", msg;
+        if (sk === "missing") msg = "⚠️ The payment confirmation key (PAYSTACK_SECRET_KEY) is not set in Supabase, so paid orders cannot be confirmed. Add it under Edge Functions → Secrets.";
+        else if (siteMode !== sk) msg = "⚠️ Payment keys do not match: the website uses a <b>" + siteMode.toUpperCase() + "</b> public key but Supabase has a <b>" + String(sk).toUpperCase() + "</b> secret key. Payments will not be confirmed until both are " + (siteMode === "unknown" ? "valid" : "from the same mode") + ".";
+        else if (sk === "test") { cls = "test"; msg = "🧪 Payments are in <b>TEST mode</b>: no real money moves. Before launch, switch the website key and the Supabase secret to your live Paystack keys."; }
+        else if (sk === "live") { cls = "live"; msg = "✅ Payments are <b>LIVE</b>. Both keys match; real customers are charged."; }
+        else msg = "Could not tell which payment mode is active.";
+        box.className = "mode-banner " + cls; box.innerHTML = msg; box.hidden = false;
+    } catch (e) {
+        console.warn('mode check error', String(e && e.message || e)); box.className = "mode-banner bad"; box.innerHTML = "Could not check the payment setup right now. Open this page again in a moment."; box.hidden = false;
+    }
+}
 
 /* ===== Orders view ===== */
 let allOrders = [];

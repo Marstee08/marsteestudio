@@ -22,11 +22,17 @@ const PRODUCT_BUCKET = "product-image";
 const CART_KEY = "mts_cart";
 
 function getCart() {
+    let cart = [];
     try {
-        return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+        cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
     } catch (e) {
         return [];
     }
+    // Items carry both market prices; the one charged follows the
+    // visitor's current currency (see effectiveNgnPrice).
+    return cart.map(item => item.priceNgn === undefined
+        ? item
+        : { ...item, price: effectiveNgnPrice(item.priceNgn, item.priceUsd) });
 }
 
 function saveCart(cart) {
@@ -166,14 +172,10 @@ const RATES_STORAGE_KEY = "mts_rates";
 const RATES_STORAGE_TIME_KEY = "mts_rates_time";
 const RATES_MAX_AGE_MS = 24 * 60 * 60 * 1000; // refresh once a day
 
+// Supported display currencies. Web-development prices in anything other than
+// Naira come from the international (USD) market table - see TIER_PRICING_USD.
 const CURRENCY_SYMBOLS = {
-    NGN: "₦", USD: "$", EUR: "€", GBP: "£", CAD: "C$", AUD: "A$",
-    ZAR: "R", KES: "KSh", GHS: "GH₵", XOF: "CFA", XAF: "FCFA",
-    EGP: "E£", MAD: "MAD", INR: "₹", JPY: "¥", CNY: "¥", AED: "AED",
-    SAR: "SAR", BRL: "R$", MXN: "MX$", CHF: "CHF", SEK: "kr", NOK: "kr",
-    DKK: "kr", PLN: "zł", TRY: "₺", SGD: "S$", NZD: "NZ$", KRW: "₩",
-    PHP: "₱", THB: "฿", VND: "₫", IDR: "Rp", PKR: "Rs", BDT: "৳",
-    UGX: "USh", TZS: "TSh", RWF: "FRw", ETB: "Br", ZMW: "ZK", HKG: "HK$"
+    NGN: "₦", USD: "$", GBP: "£", EUR: "€", CAD: "C$", AUD: "A$"
 };
 
 // Maps a visitor's detected country to the currency they'd expect to
@@ -195,7 +197,7 @@ const COUNTRY_TO_CURRENCY = {
 // approximate, safe fallback so a number is never wildly wrong.
 const FALLBACK_RATES = {
     NGN: 1, USD: 1 / 1600, EUR: 1 / 1750, GBP: 1 / 2050,
-    GHS: 1 / 105, ZAR: 1 / 88, KES: 1 / 12.4
+    CAD: 1 / 1170, AUD: 1 / 1050
 };
 
 let liveRates = null; // populated async once the rates fetch resolves
@@ -224,6 +226,7 @@ async function fetchLiveRates() {
             liveRates = data.rates;
             localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(data.rates));
             localStorage.setItem(RATES_STORAGE_TIME_KEY, String(Date.now()));
+            setTimeout(refreshDisplayedPrices, 0);
             return data.rates;
         }
     } catch {
@@ -273,7 +276,9 @@ function fetchVisitorCountry() {
 async function autoDetectCurrency() {
     if (localStorage.getItem(CURRENCY_MANUAL_KEY) === "true") return; // user already chose
     const country = await fetchVisitorCountry();
-    const code = country ? COUNTRY_TO_CURRENCY[country] : null;
+    let code = country ? COUNTRY_TO_CURRENCY[country] : null;
+    // Visitors from outside Nigeria whose own currency isn't offered see US dollars.
+    if (country && country !== "NG" && (!code || !CURRENCY_SYMBOLS[code])) code = "USD";
     if (code && code !== "NGN") {
         await fetchLiveRates();
         if (getRate(code)) setActiveCurrency(code, false);
@@ -298,13 +303,61 @@ function formatPriceIn(currencyCode, ngnAmount, rateOverride) {
     })}`;
 }
 
+// Price shown to the visitor. In Naira it is the Nigerian market price.
+// In any other currency, items that have an international (USD) market
+// price show that price converted to the chosen currency; everything else
+// converts from Naira as before.
+function formatMarketPrice(ngnAmount, usdAmount) {
+    const code = getActiveCurrency();
+    const usd = Number(usdAmount);
+    if (code !== "NGN" && usd > 0) {
+        const rateUsd = getRate("USD");
+        const rateCur = getRate(code);
+        if (rateUsd && rateCur) {
+            const amount = usd * (rateCur / rateUsd);
+            return `${CURRENCY_SYMBOLS[code] || ""}${Math.round(amount).toLocaleString()}`;
+        }
+    }
+    return formatPrice(ngnAmount);
+}
+
+// Naira amount actually charged for an item right now. Matches what
+// formatMarketPrice() shows, so the checkout total always equals the
+// price the visitor saw.
+function effectiveNgnPrice(priceNgn, priceUsd) {
+    const code = getActiveCurrency();
+    if (code !== "NGN" && Number(priceUsd) > 0) {
+        const rateUsd = getRate("USD");
+        if (rateUsd) return Math.round(Number(priceUsd) / rateUsd);
+    }
+    return Number(priceNgn) || 0;
+}
+
+// Cart total in the visitor's own currency (for "about $2,000" notes).
+// Returns "" when they are viewing in Naira.
+function cartTotalInActiveCurrency() {
+    const code = getActiveCurrency();
+    if (code === "NGN") return "";
+    const rateUsd = getRate("USD");
+    const rateCur = getRate(code);
+    if (!rateUsd || !rateCur) return "";
+    const total = getCart().reduce((sum, i) => {
+        const line = Number(i.priceUsd) > 0
+            ? Number(i.priceUsd) * (rateCur / rateUsd)
+            : Number(i.priceNgn !== undefined ? i.priceNgn : i.price) * rateCur;
+        return sum + line * i.qty;
+    }, 0);
+    return `${CURRENCY_SYMBOLS[code] || ""}${Math.round(total).toLocaleString()}`;
+}
+
 function refreshDisplayedPrices() {
     document.querySelectorAll("[data-price-ngn]").forEach(element => {
         const ngn = element.dataset.priceNgn;
         if (ngn === undefined || ngn === "") return;
         const prefix = element.dataset.pricePrefix || "";
-        element.textContent = prefix + formatPrice(ngn);
+        element.textContent = prefix + formatMarketPrice(ngn, element.dataset.priceUsd);
     });
+    document.dispatchEvent(new CustomEvent("mts-prices-changed"));
 }
 
 function setupCurrencySwitcher() {
@@ -351,16 +404,12 @@ function setupCurrencySwitcher() {
 
 const LANGUAGE_STORAGE_KEY = "mts_lang";
 const LANGUAGE_MANUAL_KEY = "mts_lang_manual";
-const LANGUAGE_LABELS = { en: "English", fr: "Français", es: "Español", pt: "Português", zh: "中文" };
+// English plus French (West/Central Africa, Canada, France).
+const LANGUAGE_LABELS = { en: "English", fr: "Français" };
 
 const COUNTRY_TO_LANGUAGE = {
     FR: "fr", CI: "fr", SN: "fr", BJ: "fr", TG: "fr", CM: "fr", GA: "fr", TD: "fr",
-    BF: "fr", ML: "fr", NE: "fr", GN: "fr", CD: "fr", CG: "fr", MG: "fr", LU: "fr",
-    ES: "es", MX: "es", AR: "es", CO: "es", CL: "es", PE: "es", VE: "es", EC: "es",
-    GT: "es", CU: "es", BO: "es", DO: "es", HN: "es", PY: "es", SV: "es", NI: "es",
-    CR: "es", PA: "es", UY: "es", GQ: "es",
-    PT: "pt", BR: "pt", AO: "pt", MZ: "pt", GW: "pt", CV: "pt", ST: "pt",
-    CN: "zh", HK: "zh", TW: "zh", MO: "zh"
+    BF: "fr", ML: "fr", NE: "fr", GN: "fr", CD: "fr", CG: "fr", MG: "fr", LU: "fr"
 };
 
 let translationsCache = {};
@@ -620,6 +669,7 @@ function setupCartDrawer(forceOpen) {
 }
 
 document.addEventListener("DOMContentLoaded", () => setupCartDrawer(false));
+document.addEventListener("mts-prices-changed", () => { if (typeof renderCartDrawerContents === "function" && document.querySelector(".cart-drawer")) renderCartDrawerContents(); });
 
 document.addEventListener("click", event => {
     const btn = event.target.closest(".add-to-cart-btn");
@@ -628,6 +678,8 @@ document.addEventListener("click", event => {
         id: btn.dataset.id,
         name: btn.dataset.name,
         price: Number(btn.dataset.price) || 0,
+        priceNgn: Number(btn.dataset.price) || 0,
+        priceUsd: Number(btn.dataset.priceUsd) || 0,
         image: btn.dataset.image || ""
     });
     const originalText = btn.textContent;
@@ -1161,8 +1213,18 @@ function getProductTier(product) {
    ========================================================= */
 
 const TIER_PRICING = {
-    web: { basic: 60000, standard: 130000, premium: 300000, luxury: 750000 },
+    web: { basic: 150000, standard: 300000, premium: 550000, luxury: 1200000 },
     digital: { basic: 15000, standard: 30000, premium: 60000, luxury: 150000 }
+};
+
+/* MARKET PRICING (international).
+   Visitors who switch to any currency other than Naira see these
+   USD web-development prices (converted to their currency) instead of
+   the Naira price converted, because the US market for web development
+   is priced very differently from the Nigerian one. A category/tier with
+   no entry here (digital experiences) simply converts from Naira. */
+const TIER_PRICING_USD = {
+    web: { basic: 300, standard: 700, premium: 1500, luxury: 3500 }
 };
 
 // Some tiers are genuinely priced as ranges/open-ended rather than
@@ -1174,6 +1236,10 @@ const FROM_PRICE_TIERS = {
 
 function getTierPrice(category, tier) {
     return TIER_PRICING[category]?.[tier];
+}
+
+function getTierPriceUsd(category, tier) {
+    return TIER_PRICING_USD[category]?.[tier];
 }
 
 async function getProductImage(path) {
@@ -1238,6 +1304,7 @@ async function loadCatalogueProducts() {
             const priceHasValue = Number.isFinite(price) &&
                 (fixedPrice !== undefined || (product.Price !== null && product.Price !== undefined));
             const pricePrefix = FROM_PRICE_TIERS[category]?.[tier] ? "From " : "";
+            const priceUsd = getTierPriceUsd(category, tier) || "";
 
             const demoVideoUrl = product.demo_video_url || "";
             const liveUrl = product.website_url || "";
@@ -1272,10 +1339,10 @@ async function loadCatalogueProducts() {
                         <span class="section-label">${escapeHtml(type.toUpperCase())}</span>
                         <h3>${escapeHtml(productName)}</h3>
                         <p>${escapeHtml(product.Description || "")}</p>
-                        ${priceHasValue ? `<strong class="price-display" data-price-ngn="${price}" data-price-prefix="${pricePrefix}">${pricePrefix}${formatPrice(price)}</strong>` : ""}
+                        ${priceHasValue ? `<strong class="price-display" data-price-ngn="${price}" data-price-usd="${priceUsd}" data-price-prefix="${pricePrefix}">${pricePrefix}${formatMarketPrice(price, priceUsd)}</strong>` : ""}
                         <div class="catalogue-card-actions">
                             ${demoButton}
-                            ${priceHasValue ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(productName)}" data-price="${price}" data-image="${escapeHtml(image || "")}">Add to Cart</button>` : ""}
+                            ${priceHasValue ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(productName)}" data-price="${price}" data-price-usd="${priceUsd}" data-image="${escapeHtml(image || "")}">Add to Cart</button>` : ""}
                             <a href="https://wa.me/2349124147362?text=${whatsappMessage}" target="_blank" rel="noopener" class="button button-secondary cart-chat-btn">Chat on WhatsApp</a>
                         </div>
                     </div>
@@ -1408,12 +1475,13 @@ function mtsProductPricing(product) {
     const hasPrice = Number.isFinite(price) &&
         (fixedPrice !== undefined || (product.Price !== null && product.Price !== undefined));
     const prefix = FROM_PRICE_TIERS[category]?.[tier] ? "From " : "";
-    return { type, category, tier, price, hasPrice, prefix };
+    const priceUsd = getTierPriceUsd(category, tier) || 0;
+    return { type, category, tier, price, priceUsd, hasPrice, prefix };
 }
 
 function mtsPriceHtml(info) {
     if (!info.hasPrice) return "";
-    return `<strong class="price-display" data-price-ngn="${info.price}" data-price-prefix="${info.prefix}">${info.prefix}${formatPrice(info.price)}</strong>`;
+    return `<strong class="price-display" data-price-ngn="${info.price}" data-price-usd="${info.priceUsd || ""}" data-price-prefix="${info.prefix}">${info.prefix}${formatMarketPrice(info.price, info.priceUsd)}</strong>`;
 }
 
 // Compact card used by the home page row and "You May Also Like".
@@ -1459,7 +1527,7 @@ async function mtsFeedSlideHtml(product) {
     const name = product.Name || "Untitled Service";
     const id = encodeURIComponent(product.id);
     const buy = info.hasPrice
-        ? `<button type="button" class="feed-btn feed-btn-ghost buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-image="${escapeHtml(image || "")}" data-i18n="new.buyNow">Buy Now</button>`
+        ? `<button type="button" class="feed-btn feed-btn-ghost buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(image || "")}" data-i18n="new.buyNow">Buy Now</button>`
         : `<a class="feed-btn feed-btn-ghost" href="https://wa.me/2349124147362?text=${encodeURIComponent(`Hi Mars Tee Studio, I'd like to ask about "${name}".`)}" target="_blank" rel="noopener" data-i18n="new.enquire">Enquire</a>`;
     return `
         <article class="feed-slide">
@@ -1489,6 +1557,8 @@ document.addEventListener("click", event => {
             id: btn.dataset.id,
             name: btn.dataset.name,
             price: Number(btn.dataset.price) || 0,
+            priceNgn: Number(btn.dataset.price) || 0,
+            priceUsd: Number(btn.dataset.priceUsd) || 0,
             image: btn.dataset.image || "",
             qty: 1
         });
@@ -1601,6 +1671,7 @@ function setupCatalogueSearch() {
 document.addEventListener("DOMContentLoaded", () => {
     setupInstallAppLink();
     setupCatalogueSearch();
+    if (getActiveCurrency() !== "NGN") fetchLiveRates().then(refreshDisplayedPrices);
 });
 
 loadCatalogueProducts();
@@ -2145,15 +2216,54 @@ if ("serviceWorker" in navigator) {
 
 let deferredInstallPrompt = null;
 
-function showInstallBanner() {
-    if (document.querySelector(".pwa-install-banner")) return;
-    // Don't nag: once dismissed, stay quiet for a day.
-    try {
-        const last = Number(localStorage.getItem("mts_install_dismissed") || 0);
-        if (Date.now() - last < 24 * 60 * 60 * 1000) return;
-    } catch (e) {}
+const INSTALL_DISMISS_KEY = "mts_install_dismissed";   // tapped the X
+const INSTALL_IOS_KEY = "mts_install_ios_hint";        // iPhone tip shown
+const INSTALL_DONE_KEY = "mts_installed";              // app was installed
 
-    const SHOW_MS = 9000;
+function mtsStored(key) {
+    try { return Number(localStorage.getItem(key) || 0); } catch (e) { return 0; }
+}
+function mtsStore(key, value) {
+    try { localStorage.setItem(key, String(value)); } catch (e) {}
+}
+function mtsIsStandalone() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+function mtsIsGone(el) {
+    if (!el || !document.body.contains(el)) return true;
+    const c = getComputedStyle(el);
+    return c.display === "none" || c.visibility === "hidden" || Number(c.opacity) === 0 || el.classList.contains("is-hidden");
+}
+
+// The homepage plays a ~6s intro and every page has a short loader. If the
+// popup appeared underneath them it would run out its timer unseen, so wait
+// until both are gone (or 12s at most) and then give it a beat.
+function whenPageReady(callback) {
+    const start = Date.now();
+    const check = () => {
+        const intro = document.getElementById("cinematicIntro");
+        const loader = document.getElementById("pageLoader");
+        const ready = document.readyState === "complete" && mtsIsGone(intro) && mtsIsGone(loader);
+        if (ready || Date.now() - start > 12000) return setTimeout(callback, 1200);
+        setTimeout(check, 300);
+    };
+    check();
+}
+
+function showInstallBanner(mode) {
+    mode = mode || "prompt";
+    if (document.querySelector(".pwa-install-banner") || mtsIsStandalone()) return;
+    if (mtsStored(INSTALL_DONE_KEY)) return;
+
+    if (mode === "prompt") {
+        // Only the X suppresses it, and only for 12 hours.
+        if (Date.now() - mtsStored(INSTALL_DISMISS_KEY) < 12 * 60 * 60 * 1000) return;
+        if (!deferredInstallPrompt) return;
+    } else if (Date.now() - mtsStored(INSTALL_IOS_KEY) < 7 * 24 * 60 * 60 * 1000) {
+        return;
+    }
+
+    const SHOW_MS = 12000;
     const banner = document.createElement("div");
     banner.className = "pwa-install-banner";
     banner.setAttribute("role", "dialog");
@@ -2163,40 +2273,56 @@ function showInstallBanner() {
             <img src="images/icon-192.png" alt="" class="pwa-install-icon">
             <strong data-i18n="new.installTitle">Install Mars Tee Studio</strong>
         </div>
-        <p class="pwa-install-copy" data-i18n="new.installCopy">Install our app for faster access and offline browsing.</p>
-        <button type="button" class="pwa-install-btn" data-i18n="new.installBtn">Install Now</button>
+        ${mode === "prompt"
+            ? '<p class="pwa-install-copy" data-i18n="new.installCopy">Install our app for faster access and offline browsing.</p><button type="button" class="pwa-install-btn" data-i18n="new.installBtn">Install Now</button>'
+            : '<p class="pwa-install-copy" data-i18n="new.iosInstallCopy">Tap the Share icon, then "Add to Home Screen" to install our app.</p><button type="button" class="pwa-install-btn" data-i18n="new.gotIt">Got it</button>'}
         <span class="pwa-install-progress" style="animation-duration:${SHOW_MS}ms"></span>
     `;
     document.body.appendChild(banner);
     retranslate();
     requestAnimationFrame(() => banner.classList.add("is-visible"));
+    if (mode === "ios") mtsStore(INSTALL_IOS_KEY, Date.now());
 
-    let timer = setTimeout(dismiss, SHOW_MS);
+    const timer = setTimeout(() => dismiss(false), SHOW_MS);
     function dismiss(remember) {
         clearTimeout(timer);
-        if (remember === true) {
-            try { localStorage.setItem("mts_install_dismissed", String(Date.now())); } catch (e) {}
-        }
+        if (remember && mode === "prompt") mtsStore(INSTALL_DISMISS_KEY, Date.now());
         banner.classList.remove("is-visible");
         setTimeout(() => banner.remove(), 400);
     }
 
     banner.querySelector(".pwa-install-close").addEventListener("click", () => dismiss(true));
-
     banner.querySelector(".pwa-install-btn").addEventListener("click", async () => {
-        dismiss(true);
-        if (!deferredInstallPrompt) return;
+        dismiss(false);
+        if (mode !== "prompt" || !deferredInstallPrompt) return;
         deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
+        const choice = await deferredInstallPrompt.userChoice;
         deferredInstallPrompt = null;
+        if (choice && choice.outcome === "accepted") mtsStore(INSTALL_DONE_KEY, Date.now());
     });
 }
 
 window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
-    showInstallBanner();
+    whenPageReady(() => showInstallBanner("prompt"));
 });
+
+window.addEventListener("appinstalled", () => {
+    mtsStore(INSTALL_DONE_KEY, Date.now());
+    deferredInstallPrompt = null;
+    document.querySelectorAll(".pwa-install-banner").forEach(b => b.remove());
+});
+
+// iPhone/iPad Safari never fires beforeinstallprompt, so show a how-to tip instead.
+(function () {
+    const ua = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const inApp = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|WhatsApp|Telegram/i.test(ua);
+    if (ios && !inApp && !mtsIsStandalone()) {
+        window.addEventListener("load", () => whenPageReady(() => showInstallBanner("ios")));
+    }
+})();
 
 function setupBackToTop() {
     if (document.body.classList.contains("admin-page") || document.querySelector(".back-to-top")) return;

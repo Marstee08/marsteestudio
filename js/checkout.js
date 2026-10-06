@@ -5,7 +5,7 @@
        (Paystack Dashboard -> Settings -> API Keys & Webhooks).
        Use the TEST key while trying this out, switch to the LIVE
        key only once you're ready to accept real payments. */
-    const PAYSTACK_PUBLIC_KEY = "pk_test_1afc4d70e6acbfbf33bf070a20f9483c758eeb77";
+    const PAYSTACK_PUBLIC_KEY = "pk_live_5b5d0c72810d9ccf276896f1f61f8dacf54ff282";
 
     function formatNaira(amount) {
         return "₦" + Math.round(amount).toLocaleString("en-NG");
@@ -29,6 +29,7 @@
 
         itemsEl.innerHTML = cart.map(item => `
             <div class="checkout-item">
+                ${item.image ? `<img class="checkout-item-thumb" src="${item.image}" alt="">` : ""}
                 <span class="checkout-item-name">${item.name} <span class="checkout-item-qty">× ${item.qty}</span></span>
                 <span class="checkout-item-price">${formatNaira(item.price * item.qty)}</span>
             </div>
@@ -36,6 +37,12 @@
 
         const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
         totalEl.textContent = formatNaira(total);
+        const localEl = document.getElementById("checkoutTotalLocal");
+        if (localEl) {
+            const local = typeof cartTotalInActiveCurrency === "function" ? cartTotalInActiveCurrency() : "";
+            localEl.hidden = !local;
+            localEl.textContent = local ? `${local} (the price you saw), charged as ${formatNaira(total)}` : "";
+        }
         return cart;
     }
 
@@ -72,18 +79,31 @@
 
     const VERIFY_PAYMENT_URL = "https://iggffzkopskzzemuksay.supabase.co/functions/v1/verify-payment";
 
+    function makeUuid() {
+        if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, ch => {
+            const r = Math.random() * 16 | 0;
+            return (ch === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+
+    // Saved BEFORE the payment popup opens (status "pending"). The database
+    // refuses the order if any price is below the real price, so a tampered
+    // cart can never reach the payment step. Because the order and its
+    // reference already exist, Paystack's webhook can mark it paid even if
+    // the customer closes their browser right after paying.
     async function saveOrder(cart, values, reference, total) {
         const supabase = typeof siteSupabaseClient !== "undefined" ? siteSupabaseClient : null;
-        if (!supabase) return null; // order still succeeded with Paystack - just isn't recorded on our side
+        if (!supabase) return { id: null, error: "We couldn't reach our server. Please check your connection and try again." };
 
         // Generated client-side rather than read back via .select() - a guest
         // order has no login, so it wouldn't pass the SELECT policy needed to
         // read the row back after inserting it (RETURNING is subject to RLS too).
-        const orderId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : null;
+        const orderId = makeUuid();
 
         try {
             const { error } = await supabase.from("Order").insert({
-                id: orderId || undefined,
+                id: orderId,
                 user_id: currentUser ? currentUser.id : null,
                 customer_name: values.name,
                 customer_email: values.email,
@@ -94,23 +114,23 @@
                 status: "pending"
             });
 
-            if (error) return null;
-            return orderId;
-        } catch {
-            // Payment already succeeded with Paystack - a failed order record
-            // shouldn't block the success message the customer sees.
-            return null;
+            if (error) return { id: null, error: error.message || "We couldn't start your order.", rejected: error.code === "P0001" };
+            return { id: orderId, error: null };
+        } catch (e) {
+            return { id: null, error: "We couldn't start your order. Please try again." };
         }
     }
 
     async function verifyPayment(reference, orderId) {
         if (!orderId) return; // no order row to reconcile against - skip quietly
         try {
-            await fetch(VERIFY_PAYMENT_URL, {
+            const res = await fetch(VERIFY_PAYMENT_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ reference, orderId })
             });
+            const result = await res.json().catch(() => ({}));
+            if (!result.verified) console.warn("Payment confirmation pending:", result);
         } catch {
             // Server-side confirmation is a defense-in-depth check, not something
             // that should block the customer's success screen if it hiccups -
@@ -130,7 +150,7 @@
         const payButton = document.getElementById("payButton");
         if (!payButton) return;
 
-        payButton.addEventListener("click", () => {
+        payButton.addEventListener("click", async () => {
             const cart = typeof getCart === "function" ? getCart() : [];
             if (!cart.length) {
                 alert("Your cart looks empty. Please add something from the catalogue before checking out.");
@@ -147,11 +167,31 @@
 
             const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
 
+            const label = payButton.textContent;
+            payButton.disabled = true;
+            payButton.textContent = "Preparing your payment…";
+
+            const reference = "MTS-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8).toUpperCase();
+            const saved = await saveOrder(cart, values, reference, total);
+
+            if (saved.error) {
+                payButton.disabled = false;
+                payButton.textContent = label;
+                alert(saved.error);
+                if (saved.rejected && typeof saveCart === "function") {
+                    saveCart([]);          // stale prices: start the cart fresh
+                    renderSummary();
+                }
+                return;
+            }
+            const orderId = saved.id;
+
             const handler = PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: values.email,
                 amount: Math.round(total * 100), // Paystack expects kobo
                 currency: "NGN",
+                ref: reference,
                 metadata: {
                     custom_fields: [
                         { display_name: "Name", variable_name: "name", value: values.name },
@@ -168,9 +208,9 @@
                 // inner IIFE sidesteps that check entirely.
                 callback: function (response) {
                     (async () => {
-                        const orderId = await saveOrder(cart, values, response.reference, total);
-                        verifyPayment(response.reference, orderId); // fire-and-forget - see comment above
+                        verifyPayment(response.reference, orderId); // marks the order paid; the webhook is the backup
                         if (typeof saveCart === "function") saveCart([]);
+                        const actionsBox = document.getElementById("checkoutActions"); if (actionsBox) actionsBox.hidden = true;
                         document.getElementById("checkoutForm").innerHTML = `
                             <div class="checkout-success">
                                 <h3>Payment received - thank you!</h3>
@@ -182,7 +222,9 @@
                     })();
                 },
                 onClose: function () {
-                    // user closed the payment popup without paying - nothing to do
+                    // closed without paying: let them try again
+                    payButton.disabled = false;
+                    payButton.textContent = label;
                 }
             });
             handler.openIframe();
@@ -245,6 +287,7 @@
     document.addEventListener("DOMContentLoaded", () => {
         setupPaymentPlanButton();
         renderSummary();
+        document.addEventListener("mts-prices-changed", renderSummary);
         setupPaystackButton();
         setupWhatsAppOrderButton();
         checkLoginState();

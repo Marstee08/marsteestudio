@@ -72,7 +72,7 @@
                     ${mtsPriceHtml(info)}
                     ${product.Description ? `<h2 data-i18n="new.description">Description</h2><p class="product-desc">${escapeHtml(product.Description)}</p>` : ""}
                     <div class="product-actions">
-                        ${info.hasPrice ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-image="${escapeHtml(images[0] || "")}" data-i18n="new.addToCart">Add to Cart</button>` : ""}
+                        ${info.hasPrice ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(images[0] || "")}" data-i18n="new.addToCart">Add to Cart</button>` : ""}
                         ${demoButton}
                         ${info.hasPrice ? `<a href="https://wa.me/2349124147362?text=${planText}" target="_blank" rel="noopener" class="button button-secondary" data-i18n="new.installmentPay">Installment pay</a>` : ""}
                         <a href="https://wa.me/2349124147362?text=${waText}" target="_blank" rel="noopener" class="button wa-full" data-i18n="new.contactWhatsapp">Contact via WhatsApp</a>
@@ -96,15 +96,19 @@
         // You May Also Like: same type first, then anything else active.
         const { data: others } = await siteSupabaseClient
             .from("Product").select("*").eq("Is_active", true).neq("id", product.id);
+        const relatedBox = document.getElementById("productRelated");
+        const relatedRow = document.getElementById("productRelatedRow");
+        relatedBox.hidden = false;
         if (others?.length) {
             const sameType = others.filter(o => o.project_type === product.project_type);
             const rest = others.filter(o => o.project_type !== product.project_type);
             const picks = [...sameType, ...rest].slice(0, 8);
-            document.getElementById("productRelatedRow").innerHTML =
-                (await Promise.all(picks.map(mtsProductCardHtml))).join("");
-            document.getElementById("productRelated").hidden = false;
+            relatedRow.innerHTML = (await Promise.all(picks.map(mtsProductCardHtml))).join("");
             if (typeof refreshDisplayedPrices === "function") refreshDisplayedPrices();
+        } else {
+            relatedRow.innerHTML = `<div class="related-empty"><p data-i18n="new.moreSoon">More products are coming soon.</p><a href="catalogue.html" class="button button-secondary" data-i18n="new.browseCatalogue">Browse the catalogue</a></div>`;
         }
+        retranslate();
     } catch (error) {
         console.error("Product page error:", error);
         showState("Couldn't load this product");

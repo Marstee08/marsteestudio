@@ -83,20 +83,10 @@
 
 <main>
 
-<section class="page-hero">
+<section class="checkout-head">
 <div class="container">
-
-<span class="section-label"><span class="label-emoji" aria-hidden="true">🛒</span> <span data-i18n="checkout.eyebrow">CHECKOUT</span></span>
-
-<h1 data-i18n-html="checkout.heroTitle">
-Complete your<br>
-<span>order.</span>
-</h1>
-
-<p data-i18n="checkout.heroText">
-Review your items, add your details, and pay securely with Paystack - or send your order to us on WhatsApp instead if you'd rather arrange payment directly.
-</p>
-
+<a href="catalogue.html" class="product-back" data-i18n="new.backToCatalogue">← Back to catalogue</a>
+<h1 data-i18n="new.checkoutTitle">Checkout</h1>
 </div>
 </section>
 
@@ -110,17 +100,8 @@ Review your items, add your details, and pay securely with Paystack - or send yo
 <p data-i18n="checkout.catalogueNote">The products in our catalogue are example packages showing what's included at each tier, not ready-made items pulled off a shelf. When you check out and pay, you're securing your project with us - we'll reach out shortly after to confirm the full details and get started.</p>
 </div>
 
-<div class="checkout-summary">
-<h2 data-i18n="checkout.orderSummary">Order Summary</h2>
-<div id="checkoutItems"></div>
-<div class="checkout-total-row">
-<span data-i18n="checkout.total">Total</span>
-<strong id="checkoutTotal">₦0</strong>
-</div>
-</div>
-
 <div class="checkout-form-card">
-<h2 data-i18n="checkout.yourDetails">Your Details</h2>
+<h2 class="ck-ic ck-user" data-i18n="checkout.yourDetails">Your Details</h2>
 
 <p id="checkoutLoginBanner" class="checkout-login-banner is-hidden"></p>
 <p class="checkout-guest-note" data-i18n-html="checkout.guestNote">Checking out as a guest? No problem - fill in your details below. <a href="account.html">Log in</a> first if you'd like this order saved to your order history.</p>
@@ -147,14 +128,26 @@ Review your items, add your details, and pay securely with Paystack - or send yo
 <textarea id="checkoutAddress" name="notes" rows="3" placeholder="Anything we should know before we start?"></textarea>
 </div>
 
+</form>
+</div>
+
+<div class="checkout-summary">
+<h2 class="ck-ic ck-bag" data-i18n="checkout.orderSummary">Order Summary</h2>
+<div id="checkoutItems"></div>
+<div class="checkout-total-row">
+<span data-i18n="checkout.total">Total</span>
+<strong id="checkoutTotal">₦0</strong>
+</div>
+<p id="checkoutTotalLocal" class="checkout-total-local" hidden></p>
+<div id="checkoutActions" class="checkout-actions">
 <button type="button" id="payButton" class="button button-primary checkout-pay-btn" data-i18n="checkout.payButton">Pay with Paystack →</button>
 <button type="button" id="whatsappOrderButton" class="button button-secondary checkout-whatsapp-btn" data-i18n="checkout.whatsappButton">Order via WhatsApp Instead</button>
 <button type="button" id="paymentPlanButton" class="button button-secondary checkout-whatsapp-btn checkout-plan-btn" data-i18n="new.askPlan">Ask About a Payment Plan</button>
-
-<p class="checkout-note" data-i18n="checkout.currencyNote">Your cart total is charged in Nigerian Naira (₦) regardless of the currency shown elsewhere on the site.</p>
-
-</form>
+<p class="checkout-secure"><span aria-hidden="true">🔒</span> <span data-i18n="new.securePay">Secure payment powered by Paystack</span></p>
 </div>
+<p class="checkout-note" data-i18n="checkout.currencyNote">Your cart total is charged in Nigerian Naira (₦) regardless of the currency shown elsewhere on the site.</p>
+</div>
+
 
 </div>
 

@@ -477,5 +477,22 @@
   "new.pfName": "Votre nom",
   "new.pfPhone": "Téléphone / numéro WhatsApp",
   "new.pfMessage": "Parlez-nous un peu de vous ou de votre activité",
-  "new.pfSend": "Envoyer sur WhatsApp"
+  "new.pfSend": "Envoyer sur WhatsApp",
+  "new.checkoutTitle": "Paiement",
+  "new.securePay": "Paiement sécurisé par Paystack",
+  "new.featFast": "Livraison rapide",
+  "new.featFastText": "Des délais clairs, du début à la livraison",
+  "new.featQuality": "Qualité assurée",
+  "new.featQualityText": "Chaque projet est vérifié avant livraison",
+  "new.featFlexible": "Paiements flexibles",
+  "new.featFlexibleText": "Payez en ligne ou demandez un plan",
+  "new.moreSoon": "D'autres produits arrivent bientôt.",
+  "new.browseCatalogue": "Parcourir le catalogue",
+  "new.iosInstallCopy": "Touchez l'icône Partager, puis « Sur l'écran d'accueil » pour installer notre application.",
+  "new.gotIt": "Compris",
+  "new.portfolioNew": "NOUVEAUX PROJETS",
+  "new.portfolioSoonTitle": "Nos derniers projets arrivent",
+  "new.portfolioLabel": "PORTFOLIO",
+  "new.portfolioHeading": "Une idée ? Construisons-la ensemble.",
+  "new.portfolioText": "Nous ajoutons nos réalisations récentes ici. En attendant, parlez-nous de votre projet et nous vous montrerons ce que nous savons faire."
 }
