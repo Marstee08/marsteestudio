@@ -488,6 +488,23 @@
         .nav-badge { margin-left: auto; min-width: 22px; padding: 2px 7px; border-radius: 999px; background: #ff4d4d; color: #fff; font-size: .75rem; text-align: center; }
         .order-toast { position: fixed; top: 18px; right: 18px; z-index: 99998; max-width: min(92vw, 380px); padding: 16px 18px; border-radius: 14px; background: #0f7a3d; color: #fff; box-shadow: 0 18px 44px rgba(0,0,0,.45); cursor: pointer; line-height: 1.5; }
         .order-toast strong { display: block; font-size: 1.05rem; }
+
+        .slides-add { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 8px; align-items: center; }
+        .slides-add input[type=text] { flex: 1 1 220px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--admin-border); background: rgba(255,255,255,.05); color: var(--admin-text); font: inherit; }
+        .slides-add input[type=file] { color: var(--admin-text-muted); max-width: 100%; }
+        .slide-primary { background: #1479ff !important; color: #fff !important; }
+        .slides-list { display: grid; gap: 14px; margin-top: 14px; }
+        .slide-card { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 14px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--admin-border); align-items: start; }
+        .slide-card.is-hidden-slide { opacity: .55; }
+        .slide-thumb { width: 120px; height: 150px; object-fit: cover; object-position: center top; border-radius: 12px; background: #111; }
+        .slide-body { display: grid; gap: 10px; min-width: 0; }
+        .slide-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .slide-row input[type=text] { flex: 1 1 160px; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--admin-border); background: rgba(255,255,255,.05); color: var(--admin-text); font: inherit; }
+        .slide-row button, .slide-row label.slide-btn { padding: 9px 12px; border-radius: 10px; border: 1px solid var(--admin-border); background: rgba(255,255,255,.07); color: var(--admin-text); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+        .slide-row .slide-remove { color: #ff8a8a; }
+        .slide-row input[type=file] { display: none; }
+        .slide-order { color: var(--admin-text-muted); font-size: .8rem; }
+        @media (max-width: 560px) { .slide-card { grid-template-columns: 90px 1fr; } .slide-thumb { width: 90px; height: 120px; } }
     </style>
 </head>
 
@@ -588,6 +605,7 @@
                 <nav class="admin-nav">
                     <button type="button" class="admin-nav-btn active" data-go="home">🏠 <span>Dashboard</span></button>
                     <button type="button" class="admin-nav-btn" data-go="orders">🧾 <span>Orders</span><b id="ordersBadge" class="nav-badge" hidden>0</b></button>
+                    <button type="button" class="admin-nav-btn" data-go="slides">🖼️ <span>Slides</span></button>
                     <button type="button" class="admin-nav-btn" data-go="products">🛍️ <span>Products</span></button>
                     <button type="button" class="admin-nav-btn" data-go="reviews">⭐ <span>Reviews</span></button>
                     <a class="admin-nav-btn" href="index.html" target="_blank" rel="noopener">🌐 <span>View website</span></a>
@@ -606,6 +624,11 @@
                         <span class="admin-card-icon">🧾</span>
                         <strong>Orders</strong>
                         <span>See every order, check payment status and contact customers.</span>
+                    </button>
+                    <button type="button" class="admin-card" data-go="slides">
+                        <span class="admin-card-icon">🖼️</span>
+                        <strong>Homepage slides</strong>
+                        <span>Change, add, reorder or remove the pictures sliding on your homepage.</span>
                     </button>
                     <button type="button" class="admin-card" data-go="products">
                         <span class="admin-card-icon">🛍️</span>
@@ -638,6 +661,19 @@
                 <p id="ordersSummary" class="admin-subtitle"></p>
                 <div id="ordersList" class="orders-list"></div>
             </section>
+
+            <section data-view="slides" class="admin-slides hidden">
+                <h1 class="admin-title">Homepage <span>Slides</span></h1>
+                <p class="admin-subtitle">These pictures slide on your homepage, in this order. Tall or square pictures work best (about 900 × 1100). The top of each picture is kept when it is cropped.</p>
+                <div class="slides-add">
+                    <input type="file" id="slideNewFile" accept="image/*">
+                    <input type="text" id="slideNewAlt" placeholder="Short description (optional)" maxlength="120">
+                    <button type="button" id="slideAddBtn" class="admin-nav-btn slide-primary" style="width:auto">＋ Add slide</button>
+                </div>
+                <p id="slidesStatus" class="admin-subtitle"></p>
+                <div id="slidesList" class="slides-list"></div>
+            </section>
+
 
 
 
@@ -1168,6 +1204,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
+<script src="js/paystack-key.js"></script>
 <script>
 if (!window.supabase || typeof window.supabase.createClient !== "function") {
     document.body.insertAdjacentHTML("afterbegin", `
@@ -1214,11 +1251,148 @@ function showView(name){
     document.querySelectorAll("[data-view]").forEach(el=>el.classList.toggle("hidden",el.dataset.view!==name));
     document.querySelectorAll(".admin-nav-btn[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===name));
     window.scrollTo({top:0});
+    if(name==="slides") loadSlides();
     if(name==="orders"){ unseenPaid = 0; const b = document.getElementById("ordersBadge"); if(b) b.hidden = true; loadOrders(); }
 }
 document.addEventListener("click",e=>{
     const go=e.target.closest("[data-go]");
     if(go) showView(go.dataset.go);
+});
+
+/* ===== Homepage slides ===== */
+let allSlides = [];
+const slideStatus = msg => { const el = document.getElementById("slidesStatus"); if (el) el.textContent = msg || ""; };
+const SLIDE_PATH_MARK = "/" + PRODUCT_BUCKET + "/";
+
+async function uploadHeroImage(file){
+    if(!file) return null;
+    if(!file.type.startsWith("image/")) throw new Error(file.name + " is not an image.");
+    if(file.size > 10*1024*1024) throw new Error(file.name + " is larger than 10MB.");
+    const compressed = await compressImage(file);
+    const ext = compressed.name.split(".").pop().toLowerCase();
+    const path = "hero/" + crypto.randomUUID() + "." + ext;
+    const { error } = await supabaseClient.storage.from(PRODUCT_BUCKET).upload(path, compressed, { cacheControl: "3600", upsert: false });
+    if(error) throw new Error("Image upload failed: " + error.message);
+    return supabaseClient.storage.from(PRODUCT_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+// Only files we uploaded (inside the bucket) are deleted; the two built-in pictures are left alone.
+async function removeSlideFile(url){
+    const at = String(url || "").indexOf(SLIDE_PATH_MARK);
+    if(at === -1) return;
+    const path = decodeURIComponent(url.slice(at + SLIDE_PATH_MARK.length).split("?")[0]);
+    await supabaseClient.storage.from(PRODUCT_BUCKET).remove([path]);
+}
+
+async function loadSlides(){
+    slideStatus("Loading slides…");
+    const { data, error } = await supabaseClient.from("hero_slides").select("*").order("sort_order", { ascending: true });
+    if(error){ slideStatus("Could not load slides: " + error.message); return; }
+    allSlides = data || [];
+    slideStatus(allSlides.length ? "" : "No slides yet. Until you add one, the homepage shows the two built-in pictures.");
+    renderSlides();
+}
+
+function renderSlides(){
+    const list = document.getElementById("slidesList");
+    list.innerHTML = allSlides.map((s, i) =>
+        '<article class="slide-card' + (s.is_active ? "" : " is-hidden-slide") + '" data-id="' + ordersEsc(s.id) + '">' +
+        '<img class="slide-thumb" src="' + ordersEsc(s.image_url) + '" alt="">' +
+        '<div class="slide-body">' +
+        '<div class="slide-order">Slide ' + (i + 1) + ' of ' + allSlides.length + (s.is_active ? "" : " · hidden on the website") + '</div>' +
+        '<div class="slide-row"><input type="text" class="slide-alt" value="' + ordersEsc(s.alt_text) + '" placeholder="Short description" maxlength="120"><button type="button" data-act="alt">Save text</button></div>' +
+        '<div class="slide-row">' +
+        '<button type="button" data-act="up"' + (i === 0 ? " disabled" : "") + '>↑ Up</button>' +
+        '<button type="button" data-act="down"' + (i === allSlides.length - 1 ? " disabled" : "") + '>↓ Down</button>' +
+        '<button type="button" data-act="toggle">' + (s.is_active ? "Hide" : "Show") + '</button>' +
+        '<label class="slide-btn">Replace picture<input type="file" accept="image/*" data-act="replace"></label>' +
+        '<button type="button" class="slide-remove" data-act="remove">Remove</button>' +
+        '</div></div></article>'
+    ).join("");
+}
+
+async function reorderSlide(id, dir){
+    const i = allSlides.findIndex(s => s.id === id);
+    const j = i + dir;
+    if(i < 0 || j < 0 || j >= allSlides.length) return;
+    [allSlides[i], allSlides[j]] = [allSlides[j], allSlides[i]];
+    for(let k = 0; k < allSlides.length; k++){
+        if(allSlides[k].sort_order !== k + 1){
+            const { error } = await supabaseClient.from("hero_slides").update({ sort_order: k + 1 }).eq("id", allSlides[k].id);
+            if(error) throw error;
+            allSlides[k].sort_order = k + 1;
+        }
+    }
+}
+
+document.addEventListener("click", async e => {
+    const btn = e.target.closest("#slidesList [data-act]");
+    if(!btn || btn.tagName === "INPUT") return;
+    const card = btn.closest(".slide-card");
+    const id = card.dataset.id;
+    const slide = allSlides.find(s => s.id === id);
+    try {
+        btn.disabled = true;
+        if(btn.dataset.act === "up") await reorderSlide(id, -1);
+        else if(btn.dataset.act === "down") await reorderSlide(id, 1);
+        else if(btn.dataset.act === "toggle"){
+            const { error } = await supabaseClient.from("hero_slides").update({ is_active: !slide.is_active }).eq("id", id);
+            if(error) throw error; slide.is_active = !slide.is_active;
+        }
+        else if(btn.dataset.act === "alt"){
+            const alt = card.querySelector(".slide-alt").value.trim();
+            const { error } = await supabaseClient.from("hero_slides").update({ alt_text: alt }).eq("id", id);
+            if(error) throw error; slide.alt_text = alt; slideStatus("Saved.");
+        }
+        else if(btn.dataset.act === "remove"){
+            if(!confirm("Remove this slide from the homepage?")){ btn.disabled = false; return; }
+            const { error } = await supabaseClient.from("hero_slides").delete().eq("id", id);
+            if(error) throw error;
+            await removeSlideFile(slide.image_url);
+            allSlides = allSlides.filter(s => s.id !== id);
+            for(let k = 0; k < allSlides.length; k++){
+                if(allSlides[k].sort_order !== k + 1){
+                    await supabaseClient.from("hero_slides").update({ sort_order: k + 1 }).eq("id", allSlides[k].id);
+                    allSlides[k].sort_order = k + 1;
+                }
+            }
+        }
+        renderSlides();
+    } catch(err){
+        slideStatus("Something went wrong: " + (err.message || err)); btn.disabled = false;
+    }
+});
+
+document.addEventListener("change", async e => {
+    const input = e.target.closest('#slidesList input[data-act="replace"]');
+    if(!input || !input.files[0]) return;
+    const card = input.closest(".slide-card");
+    const slide = allSlides.find(s => s.id === card.dataset.id);
+    try {
+        slideStatus("Uploading picture…");
+        const url = await uploadHeroImage(input.files[0]);
+        const { error } = await supabaseClient.from("hero_slides").update({ image_url: url }).eq("id", slide.id);
+        if(error) throw error;
+        const old = slide.image_url; slide.image_url = url;
+        await removeSlideFile(old);
+        slideStatus("Picture replaced."); renderSlides();
+    } catch(err){ slideStatus("Something went wrong: " + (err.message || err)); }
+});
+
+document.getElementById("slideAddBtn").addEventListener("click", async () => {
+    const file = document.getElementById("slideNewFile").files[0];
+    if(!file){ slideStatus("Choose a picture first."); return; }
+    const btn = document.getElementById("slideAddBtn");
+    try {
+        btn.disabled = true; slideStatus("Uploading picture…");
+        const url = await uploadHeroImage(file);
+        const next = allSlides.reduce((m, s) => Math.max(m, s.sort_order), 0) + 1;
+        const { error } = await supabaseClient.from("hero_slides").insert({ image_url: url, alt_text: document.getElementById("slideNewAlt").value.trim(), sort_order: next });
+        if(error) throw error;
+        document.getElementById("slideNewFile").value = ""; document.getElementById("slideNewAlt").value = "";
+        await loadSlides(); slideStatus("Slide added. It shows on the homepage straight away.");
+    } catch(err){ slideStatus("Something went wrong: " + (err.message || err)); }
+    btn.disabled = false;
 });
 
 /* ===== Live order alerts + payment mode check ===== */
@@ -1268,22 +1442,24 @@ function startOrderAlerts(){
 async function checkPaymentMode(){
     const box = document.getElementById("paymentModeBanner");
     if (!box) return;
+    const show = (cls, html) => { box.className = "mode-banner " + cls; box.innerHTML = html; box.hidden = false; };
+    const m = /^pk_(test|live)_/.exec(window.MTS_PAYSTACK_PUBLIC_KEY || "");
+    const siteMode = m ? m[1] : "unknown";
     try {
-        const js = await fetch("js/checkout.js").then(r => r.text());
-        const m = /pk_(test|live)_/.exec(js);
-        const siteMode = m ? m[1] : "unknown";
         const { data, error } = await supabaseClient.functions.invoke("verify-payment", { body: { diagnose: true } });
         if (error) throw error;
         const sk = data && data.secretKeyMode;
-        let cls = "bad", msg;
-        if (sk === "missing") msg = "⚠️ The payment confirmation key (PAYSTACK_SECRET_KEY) is not set in Supabase, so paid orders cannot be confirmed. Add it under Edge Functions → Secrets.";
-        else if (siteMode !== sk) msg = "⚠️ Payment keys do not match: the website uses a <b>" + siteMode.toUpperCase() + "</b> public key but Supabase has a <b>" + String(sk).toUpperCase() + "</b> secret key. Payments will not be confirmed until both are " + (siteMode === "unknown" ? "valid" : "from the same mode") + ".";
-        else if (sk === "test") { cls = "test"; msg = "🧪 Payments are in <b>TEST mode</b>: no real money moves. Before launch, switch the website key and the Supabase secret to your live Paystack keys."; }
-        else if (sk === "live") { cls = "live"; msg = "✅ Payments are <b>LIVE</b>. Both keys match; real customers are charged."; }
-        else msg = "Could not tell which payment mode is active.";
-        box.className = "mode-banner " + cls; box.innerHTML = msg; box.hidden = false;
+        if (sk === "missing") show("bad", "⚠️ The payment confirmation key (PAYSTACK_SECRET_KEY) is not set in Supabase, so paid orders cannot be confirmed. Add it under Edge Functions → Secrets.");
+        else if (siteMode !== sk) show("bad", "⚠️ Payment keys do not match: the website uses a <b>" + siteMode.toUpperCase() + "</b> public key but Supabase has a <b>" + String(sk).toUpperCase() + "</b> secret key. Payments will not be confirmed until both are from the same mode.");
+        else if (sk === "test") show("test", "🧪 Payments are in <b>TEST mode</b>: no real money moves. Before launch, switch the website key and the Supabase secret to your live Paystack keys.");
+        else if (sk === "live") show("live", "✅ Payments are <b>LIVE</b>. Both keys match; real customers are charged.");
+        else show("bad", "Could not tell which payment mode is active.");
     } catch (e) {
-        console.warn('mode check error', String(e && e.message || e)); box.className = "mode-banner bad"; box.innerHTML = "Could not check the payment setup right now. Open this page again in a moment."; box.hidden = false;
+        const why = String((e && e.message) || e || "unknown error").slice(0, 160);
+        const local = location.protocol === "file:"
+            ? "<br>You opened this page from a file on your computer. Open <b>https://marsteestudio.vercel.app/admin.html</b> instead and check again."
+            : "";
+        show("bad", "Could not check the payment setup right now." + local + "<br><small>" + ordersEsc(why) + "</small>");
     }
 }
 

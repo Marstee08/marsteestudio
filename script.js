@@ -2092,14 +2092,70 @@ window.addEventListener("load", () => {
    except the homepage.
    ========================================================= */
 
-function setupHeroSlider() {
+const HERO_CACHE_KEY = "mts_hero_slides";
+
+// Slides are managed from Admin -> Slides. If the database can't be reached
+// (or has no active slides) the two slides written into index.html are shown.
+async function loadHeroSlideData() {
+    const cached = () => {
+        try { return JSON.parse(localStorage.getItem(HERO_CACHE_KEY)) || null; } catch (e) { return null; }
+    };
+    if (typeof siteSupabaseClient === "undefined" || !siteSupabaseClient) return cached();
+    try {
+        const query = siteSupabaseClient
+            .from("hero_slides")
+            .select("image_url, alt_text, sort_order")
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true });
+        const { data, error } = await Promise.race([
+            query,
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 2500))
+        ]);
+        if (error) throw error;
+        if (Array.isArray(data)) {
+            try { localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+            return data;
+        }
+    } catch (e) {
+        console.warn("Mars Tee Studio: hero slides unavailable, using saved/default ones.", e);
+    }
+    return cached();
+}
+
+function renderHeroSlides(slider, rows) {
+    slider.querySelectorAll(".hero-slide").forEach(el => el.remove());
+    const overlay = slider.querySelector(".hero-slider-overlay");
+    rows.forEach((row, i) => {
+        const slide = document.createElement("div");
+        slide.className = "hero-slide" + (i === 0 ? " is-active" : "");
+        const img = document.createElement("img");
+        img.src = row.image_url;
+        img.alt = row.alt_text || "Mars Tee Studio";
+        if (i > 0) img.loading = "lazy";
+        slide.appendChild(img);
+        slider.insertBefore(slide, overlay);
+    });
+    const dotsBox = slider.querySelector(".hero-slider-dots");
+    if (dotsBox) {
+        dotsBox.innerHTML = rows.map((_, i) =>
+            `<button type="button" class="hero-slider-dot${i === 0 ? " is-active" : ""}" aria-label="Show slide ${i + 1}"></button>`
+        ).join("");
+    }
+}
+
+async function setupHeroSlider() {
     const slider = document.getElementById("heroSlider");
     if (!slider) return;
+
+    const rows = await loadHeroSlideData();
+    if (rows && rows.length) renderHeroSlides(slider, rows);
+    slider.classList.remove("is-loading");
 
     const slides = [...slider.querySelectorAll(".hero-slide")];
     const dots = [...slider.querySelectorAll(".hero-slider-dot")];
     const prevBtn = slider.querySelector(".hero-slider-prev");
     const nextBtn = slider.querySelector(".hero-slider-next");
+    slider.classList.toggle("single", slides.length < 2);
     if (slides.length < 2) return;
 
     let current = 0;
@@ -2253,7 +2309,10 @@ function whenPageReady(callback) {
 function showInstallBanner(mode) {
     mode = mode || "prompt";
     if (document.querySelector(".pwa-install-banner") || mtsIsStandalone()) return;
-    if (mtsStored(INSTALL_DONE_KEY)) return;
+    // A saved "installed" note only matters for the iPhone tip. On Android/desktop
+    // the browser itself fires beforeinstallprompt only when the app is NOT
+    // installed, so that event always wins over anything we saved earlier.
+    if (mode === "ios" && Date.now() - mtsStored(INSTALL_DONE_KEY) < 30 * 24 * 60 * 60 * 1000) return;
 
     if (mode === "prompt") {
         // Only the X suppresses it, and only for 12 hours.
@@ -2305,6 +2364,8 @@ function showInstallBanner(mode) {
 window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
+    window.__mtsInstallEvent = true;
+    mtsStore(INSTALL_DONE_KEY, 0);   // browser says "not installed" - forget any stale note
     whenPageReady(() => showInstallBanner("prompt"));
 });
 
@@ -2313,6 +2374,42 @@ window.addEventListener("appinstalled", () => {
     deferredInstallPrompt = null;
     document.querySelectorAll(".pwa-install-banner").forEach(b => b.remove());
 });
+
+
+// Add ?installdebug=1 to any page address to see why the install popup is or isn't showing.
+(function () {
+    if (!/[?&]installdebug=1/.test(location.search)) return;
+    window.addEventListener("load", () => setTimeout(() => {
+        const ua = navigator.userAgent;
+        const inApp = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|WhatsApp|Telegram|; wv\)/i.test(ua);
+        const ios = /iphone|ipad|ipod/i.test(ua);
+        const browser = /EdgA?\//.test(ua) ? "Edge" : /SamsungBrowser/.test(ua) ? "Samsung Internet" : /Firefox|FxiOS/.test(ua) ? "Firefox" : /CriOS|Chrome\//.test(ua) ? "Chrome" : /Safari/.test(ua) ? "Safari" : "other";
+        const dismissed = mtsStored(INSTALL_DISMISS_KEY);
+        const rows = [
+            ["Browser", browser + (inApp ? " (INSIDE ANOTHER APP - open the link in Chrome itself)" : "")],
+            ["Install event fired", window.__mtsInstallEvent ? "YES" : "no" + (ios ? " (normal on iPhone)" : "")],
+            ["Opened as installed app", mtsIsStandalone() ? "YES (popup is never shown inside the app)" : "no"],
+            ["Service worker running", navigator.serviceWorker && navigator.serviceWorker.controller ? "yes" : "not yet (reload once)"],
+            ["Manifest linked", document.querySelector('link[rel="manifest"]') ? "yes" : "NO"],
+            ["Popup snoozed (tapped X)", dismissed && Date.now() - dismissed < 12 * 3600e3 ? Math.ceil((12 * 3600e3 - (Date.now() - dismissed)) / 3600e3) + "h left" : "no"],
+            ["Secure page (https)", location.protocol === "https:" ? "yes" : "NO"]
+        ];
+        let verdict;
+        if (mtsIsStandalone()) verdict = "You are already inside the installed app.";
+        else if (inApp) verdict = "You opened the link inside another app's browser. Open it in Chrome.";
+        else if (window.__mtsInstallEvent) verdict = "Chrome is offering install, so the popup should show.";
+        else if (ios) verdict = "iPhone: use Share > Add to Home Screen (a tip card shows once a week).";
+        else verdict = "Chrome is NOT offering install here. Usually the app is already installed on this phone (check Chrome menu for 'Open Mars Tee Studio') or you dismissed Chrome's own install prompt before.";
+        const box = document.createElement("div");
+        box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:100000;background:#111;color:#fff;font:13px/1.5 system-ui,sans-serif;padding:14px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6);max-height:70vh;overflow:auto";
+        box.innerHTML = "<b>Install check</b><br>" + rows.map(r => r[0] + ": <b>" + r[1] + "</b>").join("<br>") +
+            "<hr style='border:0;border-top:1px solid #444;margin:8px 0'><b>" + verdict + "</b><br><br>" +
+            "<button id='dbgReset' style='padding:8px 12px;margin-right:8px'>Reset saved flags</button><button id='dbgShow' style='padding:8px 12px'>Show popup now</button>";
+        document.body.appendChild(box);
+        box.querySelector("#dbgReset").onclick = () => { mtsStore(INSTALL_DISMISS_KEY, 0); mtsStore(INSTALL_DONE_KEY, 0); mtsStore(INSTALL_IOS_KEY, 0); box.querySelector("b").textContent = "Flags reset"; };
+        box.querySelector("#dbgShow").onclick = () => { mtsStore(INSTALL_DISMISS_KEY, 0); showInstallBanner(ios ? "ios" : "prompt"); };
+    }, 6000));
+})();
 
 // iPhone/iPad Safari never fires beforeinstallprompt, so show a how-to tip instead.
 (function () {

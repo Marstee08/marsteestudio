@@ -5,7 +5,7 @@
        (Paystack Dashboard -> Settings -> API Keys & Webhooks).
        Use the TEST key while trying this out, switch to the LIVE
        key only once you're ready to accept real payments. */
-    const PAYSTACK_PUBLIC_KEY = "pk_live_5b5d0c72810d9ccf276896f1f61f8dacf54ff282";
+    const PAYSTACK_PUBLIC_KEY = window.MTS_PAYSTACK_PUBLIC_KEY || ""; // set in js/paystack-key.js
 
     function formatNaira(amount) {
         return "₦" + Math.round(amount).toLocaleString("en-NG");
@@ -160,7 +160,7 @@
             const values = getFormValues();
             if (!validateForm(values)) return;
 
-            if (typeof PAYSTACK_PUBLIC_KEY === "undefined" || PAYSTACK_PUBLIC_KEY.includes("REPLACE_WITH")) {
+            if (!PAYSTACK_PUBLIC_KEY || PAYSTACK_PUBLIC_KEY.includes("REPLACE_WITH")) {
                 alert("Online payment isn't fully set up yet - please use the WhatsApp option below, or contact us directly.");
                 return;
             }

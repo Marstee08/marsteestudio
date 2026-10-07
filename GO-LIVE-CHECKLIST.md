@@ -6,7 +6,7 @@ Do these in order. The admin panel (Dashboard) shows a banner telling you if the
    (business details, bank account for payouts). Until it is approved you only get test keys.
 2. **Copy your LIVE keys** (Settings -> API Keys & Webhooks): the *public* key starts `pk_live_`,
    the *secret* key starts `sk_live_`.
-3. **Website**: DONE - `js/checkout.js` already contains your `pk_live_...` public key. (Only sync it to GitHub AFTER step 4.)
+3. **Website**: DONE - `js/paystack-key.js` already contains your `pk_live_...` public key. (Only sync it to GitHub AFTER step 4.)
 4. **Supabase**: Project -> Edge Functions -> Secrets -> set `PAYSTACK_SECRET_KEY` to the `sk_live_...` key.
    (Public and secret key must BOTH be live, or both test. The admin banner flags a mismatch.)
 5. **Webhook** (so a payment is never missed even if the customer closes the page):
