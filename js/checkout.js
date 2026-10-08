@@ -123,18 +123,22 @@
 
     async function verifyPayment(reference, orderId) {
         if (!orderId) return; // no order row to reconcile against - skip quietly
-        try {
-            const res = await fetch(VERIFY_PAYMENT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ reference, orderId })
-            });
-            const result = await res.json().catch(() => ({}));
-            if (!result.verified) console.warn("Payment confirmation pending:", result);
-        } catch {
-            // Server-side confirmation is a defense-in-depth check, not something
-            // that should block the customer's success screen if it hiccups -
-            // the order still sits recorded as "pending" for manual follow-up.
+        // Try up to 3 times (now, +4s, +12s): the first attempt can race the
+        // payment settling on Paystack's side. The Paystack webhook is the backup.
+        for (const waitMs of [0, 4000, 8000]) {
+            if (waitMs) await new Promise(r => setTimeout(r, waitMs));
+            try {
+                const res = await fetch(VERIFY_PAYMENT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ reference, orderId })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (result.verified) return;
+                console.warn("Payment confirmation pending:", result);
+            } catch {
+                // a hiccup here must never block the customer's success screen
+            }
         }
     }
 

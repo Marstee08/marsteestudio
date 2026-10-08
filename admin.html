@@ -477,6 +477,8 @@
             padding: 10px 14px; border-radius: 10px; border: 1px solid var(--admin-border); font: inherit;
             font-size: .88rem; font-weight: 600; background: rgba(255,255,255,.07); color: var(--admin-text); text-decoration: none; cursor: pointer;
         }
+        .order-actions .order-check { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+        .order-result { margin: 6px 0 0; padding: 10px 12px; border-radius: 10px; font-size: .85rem; line-height: 1.5; background: rgba(255,255,255,.07); }
         .order-actions .order-save { background: #1479ff; border-color: #1479ff; color: #fff; }
         .order-actions .order-wa { background: #25d366; border-color: #25d366; color: #fff; }
         .orders-note { padding: 18px; border-radius: 14px; border: 1px dashed var(--admin-border); line-height: 1.7; }
@@ -1395,6 +1397,26 @@ document.getElementById("slideAddBtn").addEventListener("click", async () => {
     btn.disabled = false;
 });
 
+document.addEventListener("click", async e => {
+    const btn = e.target.closest(".order-check");
+    if (!btn) return;
+    const card = btn.closest(".order-card");
+    const order = allOrders.find(o => String(o.id) === card.dataset.id);
+    let out = card.querySelector(".order-result");
+    if (!out) { out = document.createElement("div"); out.className = "order-result"; card.appendChild(out); }
+    btn.disabled = true; out.textContent = "Asking Paystack…";
+    try {
+        const { data, error } = await supabaseClient.functions.invoke("verify-payment", { body: { reference: order.paystack_reference, orderId: order.id } });
+        if (error) throw error;
+        if (data && data.verified) { out.textContent = "✅ Paystack confirms this payment. The order is now marked paid."; await loadOrders(); return; }
+        out.innerHTML = "❌ Not confirmed: " + ordersEsc((data && data.error) || "unknown reason") + (data && data.detail ? "<br>Paystack says: <b>" + ordersEsc(data.detail) + "</b>" : "") +
+            "<br><small>\"Transaction reference not found\" usually means the payment was never completed, or the secret key in Supabase is a TEST key while the site is LIVE.</small>";
+    } catch (err) {
+        out.textContent = "Could not reach the payment check: " + String((err && err.message) || err).slice(0, 160);
+    }
+    btn.disabled = false;
+});
+
 /* ===== Live order alerts + payment mode check ===== */
 let unseenPaid = 0, ordersChannel = null;
 const seenPaidIds = new Set();
@@ -1509,7 +1531,7 @@ function renderOrders(){
             '<div class="order-total">' + ordersNaira(o.total_amount) + '</div>' +
             '<div class="order-actions"><select class="order-status">' +
             ["pending","paid","failed","completed","cancelled"].map(s => '<option value="' + s + '"' + (s === st ? " selected" : "") + '>' + s + '</option>').join("") +
-            '</select><button type="button" class="order-save">Save status</button>' + (wa ? '<a class="order-wa" href="' + wa + '" target="_blank" rel="noopener">WhatsApp customer</a>' : "") + '</div>' +
+            '</select><button type="button" class="order-save">Save status</button>' + (st === "pending" && o.paystack_reference ? '<button type="button" class="order-check">Check payment</button>' : "") + (wa ? '<a class="order-wa" href="' + wa + '" target="_blank" rel="noopener">WhatsApp customer</a>' : "") + '</div>' +
             '</article>';
     }).join("");
 }

@@ -8523,3 +8523,71 @@ html.has-product-feed { scroll-snap-type: y proximity; }
 /* hero slideshow: hide the built-in slides until the saved ones are known, and hide controls for a single slide */
 .hero-slider.is-loading .hero-slide { opacity: 0 !important; }
 .hero-slider.single .hero-slider-arrow, .hero-slider.single .hero-slider-dots { display: none; }
+
+/* ---- feed slides: every picture sits in the same square box so all slides line up ---- */
+.feed-slide { justify-content: flex-start; gap: 16px; }
+.feed-img {
+  position: relative; overflow: hidden; display: block; width: 100%;
+  aspect-ratio: 1 / 1; max-height: 54svh; height: auto; flex: 0 0 auto; background: #fff;
+}
+.feed-img::before {
+  content: ""; position: absolute; inset: -24px; background: var(--img, none) center / cover no-repeat;
+  filter: blur(22px) saturate(1.15); opacity: .95;
+}
+.feed-img img { position: relative; width: 100%; height: 100%; max-height: none; object-fit: contain; }
+.feed-body { margin-top: auto; }
+@media (min-width: 900px) {
+  .feed-slide { justify-content: flex-start; }
+  .feed-img { height: auto; aspect-ratio: 1 / 1; max-height: none; }
+  .feed-img img { height: 100%; }
+}
+
+/* slides hug their content (picture, text, buttons) like Quick Choice, so every card is the same height */
+.feed-slide { min-height: 0; }
+.feed-body { margin-top: 0; }
+
+/* =========================================================
+   HOME PRODUCT STAGE (one product at a time, fading to the next - like Quick Choice)
+   ========================================================= */
+html.has-product-feed { scroll-snap-type: none !important; }
+.home-feed { padding: 14px 0 28px; }
+.home-feed .home-search { margin: 0 auto 14px; }
+.mstage {
+  position: relative; overflow: hidden; width: 100%;
+  height: calc(100svh - 72px - 78px); min-height: 560px; max-height: 780px;
+}
+.mslide {
+  --tint: 11, 99, 246;
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 14px;
+  padding: 14px 14px 40px; color: #fff;
+  background: linear-gradient(180deg, rgba(var(--tint), .92) 0%, rgba(var(--tint), .6) 100%), #0a1020;
+  opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility 0s linear .7s;
+}
+.mslide.is-active { opacity: 1; visibility: visible; transition: opacity .7s ease, visibility 0s; z-index: 1; }
+.mimg {
+  display: block; flex: 0 1 auto; aspect-ratio: 1 / 1; min-height: 140px; width: 100%;
+  padding: 8px; border-radius: 16px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.22);
+}
+.mbox { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 10px; background: #fff; }
+.mbox::before {
+  content: ""; position: absolute; inset: -24px; background: var(--img, none) center / cover no-repeat;
+  filter: blur(22px) saturate(1.15); opacity: .95;
+}
+.mbox img { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; }
+.mcard {
+  flex: 0 0 auto; padding: 16px 16px 18px; border-radius: 18px; gap: 6px;
+  background: rgba(6, 10, 22, .5); border: 1px solid rgba(255,255,255,.14);
+}
+.mcard .feed-desc { -webkit-line-clamp: 2; }
+.mdots { position: absolute; left: 0; right: 0; bottom: 12px; display: flex; justify-content: center; gap: 8px; z-index: 3; }
+.mdot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; transition: width .25s ease, background .25s ease; }
+.mdot.is-active { width: 22px; border-radius: 6px; background: #fff; }
+@media (max-width: 760px) { .mstage { height: calc(100svh - 72px - 78px); } }
+@media (min-width: 900px) {
+  .mstage { max-width: 1080px; margin: 0 auto; height: 520px; min-height: 0; border-radius: 24px; }
+  .mslide { flex-direction: row; align-items: center; gap: 24px; padding: 28px 28px 48px; }
+  .mimg { flex: 0 0 auto; width: auto; height: 100%; max-height: 100%; aspect-ratio: 1 / 1; }
+  .mcard { flex: 1 1 auto; align-self: center; }
+  .mcard h3 { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) { .mslide { transition: none; } }

@@ -1530,9 +1530,11 @@ async function mtsFeedSlideHtml(product) {
         ? `<button type="button" class="feed-btn feed-btn-ghost buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(image || "")}" data-i18n="new.buyNow">Buy Now</button>`
         : `<a class="feed-btn feed-btn-ghost" href="https://wa.me/2349124147362?text=${encodeURIComponent(`Hi Mars Tee Studio, I'd like to ask about "${name}".`)}" target="_blank" rel="noopener" data-i18n="new.enquire">Enquire</a>`;
     return `
-        <article class="feed-slide">
-            <a class="feed-img" href="product.html?id=${id}" aria-label="${escapeHtml(name)}">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy">` : ""}</a>
-            <div class="feed-body">
+        <article class="mslide" aria-label="${escapeHtml(name)}">
+            <a class="mimg" href="product.html?id=${id}" aria-label="${escapeHtml(name)}">
+                <span class="mbox"${image ? ` style="--img:url(&#039;${escapeHtml(image)}&#039;)"` : ""}>${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy">` : ""}</span>
+            </a>
+            <div class="feed-body mcard">
                 <span class="feed-type">${escapeHtml(info.type.toUpperCase())}</span>
                 <h3>${escapeHtml(name)}</h3>
                 ${mtsPriceHtml(info)}
@@ -1544,6 +1546,49 @@ async function mtsFeedSlideHtml(product) {
                 </div>
             </div>
         </article>`;
+}
+
+// One product at a time, fading to the next every few seconds (swipe or tap a dot to change).
+function startProductStage(stage) {
+    const slides = [...stage.querySelectorAll(".mslide")];
+    if (!slides.length) return;
+    const dotsBox = document.createElement("div");
+    dotsBox.className = "mdots";
+    slides.forEach((_, i) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "mdot";
+        dot.setAttribute("aria-label", "Show product " + (i + 1));
+        dotsBox.appendChild(dot);
+    });
+    if (slides.length > 1) stage.appendChild(dotsBox);
+    const dots = [...dotsBox.children];
+
+    let current = 0, timer = null;
+    const show = n => {
+        current = (n + slides.length) % slides.length;
+        slides.forEach((s, i) => s.classList.toggle("is-active", i === current));
+        dots.forEach((d, i) => d.classList.toggle("is-active", i === current));
+    };
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const stop = () => { if (timer) clearInterval(timer); timer = null; };
+    const start = () => { stop(); if (slides.length > 1 && !calm) timer = setInterval(() => { if (!document.hidden) show(current + 1); }, 5500); };
+
+    dots.forEach((d, i) => d.addEventListener("click", () => { show(i); start(); }));
+    let x0 = null;
+    stage.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; stop(); }, { passive: true });
+    stage.addEventListener("touchend", e => {
+        if (x0 !== null) {
+            const dx = e.changedTouches[0].clientX - x0;
+            if (Math.abs(dx) > 45) show(current + (dx < 0 ? 1 : -1));
+        }
+        x0 = null; start();
+    }, { passive: true });
+    stage.addEventListener("mouseenter", stop);
+    stage.addEventListener("mouseleave", start);
+
+    show(0);
+    start();
 }
 
 // "Buy Now": make sure the item is in the cart (without stacking an extra
@@ -1587,11 +1632,12 @@ async function loadHomeProducts() {
         document.documentElement.classList.add("has-product-feed");
         refreshDisplayedPrices();
         retranslate();
+        startProductStage(row);
 
-        row.querySelectorAll(".feed-slide img").forEach(img => {
+        row.querySelectorAll(".mslide img").forEach(img => {
             const tint = () => {
                 const t = mtsTintFromImage(img);
-                if (t) img.closest(".feed-slide").style.setProperty("--tint", t);
+                if (t) img.closest(".mslide").style.setProperty("--tint", t);
             };
             if (img.complete && img.naturalWidth) tint();
             else img.addEventListener("load", tint, { once: true });
