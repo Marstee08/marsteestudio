@@ -2009,22 +2009,43 @@ gap: 5px;
 }
 
 .rating-selector input {
-display: none;
+position: absolute;
+opacity: 0;
+width: 1px;
+height: 1px;
+pointer-events: none;
 }
 
 .rating-selector label {
+position: relative;
 margin: 0;
+padding: 4px 3px;
 cursor: pointer;
 font-size: var(--fs-2xl);
 color: #c9d0da;
-transition: 0.2s ease;
+transition: color 0.15s ease, transform 0.15s ease;
+-webkit-tap-highlight-color: transparent;
 }
 
-.rating-selector label:hover,
-.rating-selector label:hover ~ label,
-.rating-selector label:has(input:checked),
-.rating-selector label:has(input:checked) ~ label {
+.rating-selector label.is-on {
 color: var(--blue);
+}
+
+.rating-selector label:active {
+transform: scale(1.15);
+}
+
+@media (hover: hover) {
+.rating-selector label:hover,
+.rating-selector label:hover ~ label {
+color: var(--blue);
+}
+}
+
+.rating-selector label:focus-within {
+outline: 2px solid var(--blue);
+outline-offset: 2px;
+border-radius: 6px;
 }
 
 .review-consent label {
@@ -6418,8 +6439,8 @@ html.dark-theme .product-detail-image {
   will-change: opacity, transform;
 
   animation:
-    cineGlowIn 0.9s ease-out forwards,
-    cineGlowPulse 4s ease-in-out 0.9s infinite;
+    cineGlowIn 0.36s ease-out forwards,
+    cineGlowPulse 1.6s ease-in-out 0.36s infinite;
 }
 
 /* logo: blurred/scaled down, resolves into sharp focus
@@ -6436,7 +6457,7 @@ html.dark-theme .product-detail-image {
   scale: .85;
   will-change: opacity, filter, scale;
 
-  animation: cineLogoIn 0.75s cubic-bezier(.16,1,.3,1) 0.9s forwards;
+  animation: cineLogoIn 0.3s cubic-bezier(.16,1,.3,1) 0.36s forwards;
 }
 
 .cine-logo {
@@ -6465,7 +6486,7 @@ html.dark-theme .product-detail-image {
   text-transform: uppercase;
 
   opacity: 0;
-  animation: cineFadeIn 0.3s ease 1.8s forwards;
+  animation: cineFadeIn 0.12s ease 0.72s forwards;
 }
 
 .cine-skip {
@@ -6482,7 +6503,7 @@ html.dark-theme .product-detail-image {
   text-transform: uppercase;
 
   opacity: 0;
-  animation: cineFadeIn 0.3s ease 1s forwards;
+  animation: cineFadeIn 0.12s ease 0.4s forwards;
 }
 
 /* first sweep: thin, sharp, bright - crosses while the
@@ -6509,7 +6530,7 @@ html.dark-theme .product-detail-image {
   opacity: 0;
   will-change: opacity, transform;
 
-  animation: cineStrokeThin 0.65s linear 1s forwards;
+  animation: cineStrokeThin 0.26s linear 0.4s forwards;
 }
 
 /* second sweep: wide, soft, blurred - passes through the
@@ -6536,7 +6557,7 @@ html.dark-theme .product-detail-image {
   opacity: 0;
   will-change: opacity, transform;
 
-  animation: cineStrokeWide 0.9s ease-in-out 3s forwards;
+  animation: cineStrokeWide 0.36s ease-in-out 1.2s forwards;
 }
 
 /* ---- keyframes ---- */
@@ -6953,7 +6974,7 @@ html.dark-theme .product-detail-image {
     position: absolute;
     inset: 0;
     opacity: 0;
-    transition: opacity 0.7s ease;
+    transition: opacity 0.45s ease;
     pointer-events: none;
 }
 
@@ -8172,7 +8193,7 @@ html.dark-theme .checkout-total-row {
    ========================================================= */
 .drawer-head, .drawer-foot, .nav-overlay { display: none; }
 
-@media (max-width: 760px) {
+@media (max-width: 1280px) {
   .nav-overlay {
     display: block; position: fixed; inset: 0; z-index: 1101;
     background: rgba(2, 6, 14, 0.62); opacity: 0; pointer-events: none;
@@ -8561,9 +8582,9 @@ html.has-product-feed { scroll-snap-type: none !important; }
   position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 14px;
   padding: 14px 14px 40px; color: #fff;
   background: linear-gradient(180deg, rgba(var(--tint), .92) 0%, rgba(var(--tint), .6) 100%), #0a1020;
-  opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility 0s linear .7s;
+  opacity: 0; visibility: hidden; transition: opacity .45s ease, visibility 0s linear .45s;
 }
-.mslide.is-active { opacity: 1; visibility: visible; transition: opacity .7s ease, visibility 0s; z-index: 1; }
+.mslide.is-active { opacity: 1; visibility: visible; transition: opacity .45s ease, visibility 0s; z-index: 1; }
 .mimg {
   display: block; flex: 0 1 auto; aspect-ratio: 1 / 1; min-height: 140px; width: 100%;
   padding: 8px; border-radius: 16px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.22);
@@ -8591,3 +8612,100 @@ html.has-product-feed { scroll-snap-type: none !important; }
   .mcard h3 { font-size: 2rem; }
 }
 @media (prefers-reduced-motion: reduce) { .mslide { transition: none; } }
+
+/* =========================================================
+   MENU: hamburger drawer on tablets and small laptops; compact bar on bigger laptops
+   ========================================================= */
+@media (min-width: 761px) and (max-width: 1280px) {
+  .menu-toggle { display: flex; z-index: 1001; position: relative; }
+  .site-header { backdrop-filter: none; background: rgba(255, 255, 255, 0.97); }
+  html.dark-theme .site-header { background: rgba(10, 15, 24, 0.97); }
+}
+@media (min-width: 1281px) and (max-width: 1500px) {
+  .main-nav { gap: 12px; }
+  .main-nav .nav-link { font-size: .88rem; }
+}
+
+/* cart lives in the header next to the menu button (not inside the menu) */
+.nav-container > .cart-icon-btn {
+  margin-left: auto; margin-right: 10px; width: 42px; height: 42px;
+  border: 1px solid var(--border); background: var(--white); color: var(--text);
+}
+.nav-container > .cart-icon-btn + .menu-toggle { margin-left: 0; }
+.nav-container > .cart-icon-btn .cart-count { top: -7px; right: -7px; }
+
+/* slideshow buttons: readable in every theme (light text on dark/blue buttons, dark text on the white "More") */
+.mslide .feed-btn-primary, .mslide .feed-btn-ghost { color: #fff !important; }
+.mslide .feed-btn-light, .feed-btn-light { color: #0a1020 !important; background: #fff !important; }
+.mslide .feed-btn:visited { color: inherit; }
+.mslide .feed-btn-light:visited { color: #0a1020 !important; }
+
+/* =========================================================
+   COMPACT SPACING - tighter gaps between and inside sections on every page
+   (kept at the very end so it wins; change the numbers here to loosen or tighten)
+   ========================================================= */
+.section-padding { padding: 56px 0; }
+.page-hero { padding: 72px 0 50px; }
+.hero-section { padding: 56px 0; min-height: auto; }
+.package-comparison-section { padding: 40px 0 56px; }
+.site-footer { padding: 52px 0 22px; }
+.footer-main { gap: 40px; }
+.section-heading p { margin-top: 16px; }
+.section-top, .portfolio-intro, .reviews-heading, .catalogue-intro, .blog-featured { margin-bottom: 32px; }
+.catalogue-guide .section-heading { margin-bottom: 40px; }
+.hero-grid, .portfolio-intro { gap: 44px; }
+.service-detail-grid, .catalogue-custom-box { gap: 40px; }
+.cta-box, .custom-project-box, .availability-box, .catalogue-cta .simple-cta { gap: 32px; }
+.trust-box, .review-form-layout { gap: 36px; }
+
+@media (max-width: 1000px) {
+  .section-padding { padding: 44px 0; }
+  .page-hero { padding: 54px 0 38px; }
+  .hero-section { padding: 44px 0; }
+}
+@media (max-width: 760px) {
+  .section-padding { padding: 30px 0; }
+  .page-hero { padding: 40px 0 28px; }
+  .hero-section { padding: 28px 0; }
+  .package-comparison-section { padding: 26px 0 36px; }
+  .site-footer { padding: 36px 0 18px; }
+  .footer-main { gap: 28px; }
+  .section-top, .portfolio-intro, .reviews-heading, .catalogue-intro, .blog-featured { margin-bottom: 24px; }
+  .catalogue-guide .section-heading { margin-bottom: 28px; }
+  .hero-grid, .portfolio-intro, .service-detail-grid, .catalogue-custom-box { gap: 26px; }
+  .cta-box, .custom-project-box, .availability-box, .catalogue-cta .simple-cta, .trust-box, .review-form-layout { gap: 22px; }
+  .home-feed { padding: 8px 0 18px; }
+  .home-features { margin-top: 18px; }
+}
+
+/* =========================================================
+   SLIDESHOW: fit the content (no stretched empty space)
+   ========================================================= */
+.mstage { display: grid; height: auto !important; min-height: 0 !important; max-height: none !important; }
+.mslide {
+  grid-area: 1 / 1; position: relative; inset: auto; justify-content: flex-start;
+  gap: 10px; padding: 12px 12px 34px;
+}
+.mimg { width: min(100%, 46svh); margin: 0 auto; flex: 0 0 auto; min-height: 0; padding: 6px; }
+.mcard { padding: 12px 14px 14px; gap: 4px; }
+.mcard h3 { font-size: 1.3rem; margin: 0; }
+.mcard .price-display { font-size: 1.25rem; }
+.mcard .feed-desc { font-size: .88rem; line-height: 1.45; }
+.mcard .feed-actions { margin-top: 6px; gap: 8px; }
+.mcard .feed-btn { padding: 11px 6px; font-size: .88rem; }
+.mdots { bottom: 10px; }
+.home-feed .home-search { margin: 0 auto 10px; }
+.home-feed .home-search input { padding: 12px 16px 12px 44px; }
+.home-features { margin-top: 12px; gap: 8px; }
+.home-features > div { padding: 12px 8px; }
+@media (max-width: 760px) {
+  .home-feed { padding: 6px 0 12px; }
+  .home-features > div { padding: 10px 14px; }
+}
+@media (min-width: 900px) {
+  .mstage { height: auto !important; }
+  .mslide { padding: 22px 26px 40px; gap: 22px; align-items: center; }
+  .mimg { width: 360px; height: 360px; margin: 0; flex: 0 0 auto; aspect-ratio: auto; }
+  .mcard { flex: 1 1 auto; }
+}
+@media (max-width: 760px) and (max-height: 700px) { .mimg { width: min(100%, 38svh); } .mcard .feed-desc { -webkit-line-clamp: 1; } }

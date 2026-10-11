@@ -507,6 +507,18 @@
         .slide-row input[type=file] { display: none; }
         .slide-order { color: var(--admin-text-muted); font-size: .8rem; }
         @media (max-width: 560px) { .slide-card { grid-template-columns: 90px 1fr; } .slide-thumb { width: 90px; height: 120px; } }
+
+        .edit-banner { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 14px 16px; margin-bottom: 18px; border-radius: 14px; background: rgba(124,58,237,.14); border: 1px solid rgba(124,58,237,.5); color: var(--admin-text); }
+        .edit-banner small { color: var(--admin-text-muted); flex: 1 1 100%; }
+        .product-actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+        .product-actions-row button { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--admin-border); background: rgba(255,255,255,.07); color: var(--admin-text); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+        .product-actions-row .edit-product-btn { background: #1479ff; border-color: #1479ff; color: #fff; }
+        .product-actions-row .delete-product-btn { color: #ff8a8a; }
+        .product-item.is-hidden-product { opacity: .6; }
+        .pill { display: inline-block; padding: 2px 10px; margin-right: 6px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: rgba(255,255,255,.1); color: var(--admin-text); }
+        .pill-on { background: rgba(74,222,128,.18); color: #86efac; }
+        .pill-off { background: rgba(255,179,102,.18); color: #ffcf99; }
+        .pill-star { background: rgba(255,214,10,.18); color: #ffd60a; }
     </style>
 </head>
 
@@ -694,6 +706,13 @@
                 </h2>
 
                 <div class="admin-form-layout">
+
+                <div id="editBanner" class="edit-banner hidden">
+                    <div>✏️ Editing <b id="editName"></b></div>
+                    <div class="edit-banner-media" id="editMedia"></div>
+                    <small>Pictures and video stay as they are unless you choose new ones below.</small>
+                    <button type="button" id="cancelEditBtn" class="admin-button">Cancel editing</button>
+                </div>
 
                 <form
                     id="productForm"
@@ -1835,6 +1854,7 @@ productForm?.addEventListener("submit",async e=>{
     e.preventDefault();
 
     const saveButton=productForm.querySelector('button[type="submit"]');
+    const editing=editingProduct;   // null = adding a new product
 
     try{
         if(saveButton)saveButton.disabled=true;
@@ -1878,8 +1898,17 @@ productForm?.addEventListener("submit",async e=>{
             imageUrl=await uploadProductImage(getFile("digitalPreviewFile"));
         }
 
+        // Editing: anything not re-uploaded keeps its current value.
+        if(editing){
+            if(!imageUrl)imageUrl=editing.Image_url||null;
+            if(!frontUrl)frontUrl=editing.front_image_url||null;
+            if(!backUrl)backUrl=editing.back_image_url||null;
+            if(!galleryUrls.length&&Array.isArray(editing.gallery_URLs))galleryUrls=editing.gallery_URLs;
+        }
+
         if(productFormMessage)productFormMessage.textContent="Uploading video...";
-        const demoVideoUrl=await uploadProductVideo(getFile("productVideo"));
+        let demoVideoUrl=await uploadProductVideo(getFile("productVideo"));
+        if(editing&&!demoVideoUrl)demoVideoUrl=editing.demo_video_url||null;
 
         if(productFormMessage)productFormMessage.textContent="Saving product...";
 
@@ -1900,21 +1929,40 @@ productForm?.addEventListener("submit",async e=>{
             package:packageTier
         };
 
-        const {data,error}=await supabaseClient
-            .from(PRODUCT_TABLE)
-            .insert(productData)
-            .select()
-            .single();
+        let data,error;
+        if(editing){
+            ({data,error}=await supabaseClient
+                .from(PRODUCT_TABLE)
+                .update(productData)
+                .eq("id",editing.id)
+                .select()
+                .single());
+        }else{
+            ({data,error}=await supabaseClient
+                .from(PRODUCT_TABLE)
+                .insert(productData)
+                .select()
+                .single());
+        }
 
         if(error)throw error;
+
+        // pictures that were replaced are deleted from storage (only files we uploaded)
+        if(editing){
+            const kept=[productData.Image_url,productData.front_image_url,productData.back_image_url,...(productData.gallery_URLs||[])];
+            for(const old of [editing.Image_url,editing.front_image_url,editing.back_image_url]){
+                if(old&&!kept.includes(old))await removeSlideFile(old);
+            }
+        }
 
         console.log("Product saved:",data);
 
         if(productFormMessage){
             productFormMessage.className="success-message";
-            productFormMessage.textContent="Product saved successfully!";
+            productFormMessage.textContent=editing?"Changes saved. They are live on the website now.":"Product saved successfully!";
         }
 
+        exitEditMode(true);
         productForm.reset();
         const active=document.getElementById("productActive");
         if(active)active.checked=true;
@@ -1937,6 +1985,9 @@ productForm?.addEventListener("submit",async e=>{
     }
 });
 
+let editingProduct=null;
+const productsCache={};
+
 async function loadProducts(){
     const list=document.getElementById("productsList");
     if(!list)return;
@@ -1944,7 +1995,8 @@ async function loadProducts(){
     try{
         const {data,error}=await supabaseClient
             .from(PRODUCT_TABLE)
-            .select("*");
+            .select("*")
+            .order("created_at",{ascending:false});
 
         if(error)throw error;
 
@@ -1953,18 +2005,29 @@ async function loadProducts(){
             return;
         }
 
+        data.forEach(p=>{productsCache[p.id]=p;});
+
         list.innerHTML=data.map(product=>{
             const image=product.Image_url||product.front_image_url||"";
+            const price=product.Price!==null&&product.Price!==undefined&&product.Price!==""?"₦"+Number(product.Price).toLocaleString("en-NG"):"no price";
+            const badges=[
+                product.Is_active?'<span class="pill pill-on">Showing</span>':'<span class="pill pill-off">Hidden</span>',
+                product.is_featured?'<span class="pill pill-star">Featured</span>':"",
+                product.package?'<span class="pill">'+escapeHtml(product.package)+'</span>':""
+            ].join("");
             return `
-                <article class="product-item reveal-scale">
+                <article class="product-item reveal-scale${product.Is_active?"":" is-hidden-product"}" data-id="${escapeHtml(product.id)}">
                     ${image?`<img src="${escapeHtml(image)}" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">`:""}
                     <div class="product-info">
                         <h3>${escapeHtml(product.Name||"")}</h3>
-                        <p>${escapeHtml(product.project_type||"")}</p>
+                        <p>${escapeHtml(product.project_type||"")} · ${escapeHtml(price)}</p>
+                        <p>${badges}</p>
                     </div>
-                    <button type="button" class="delete-product-btn" data-id="${escapeHtml(product.id)}">
-                        Delete
-                    </button>
+                    <div class="product-actions-row">
+                        <button type="button" class="edit-product-btn" data-id="${escapeHtml(product.id)}">Edit</button>
+                        <button type="button" class="toggle-product-btn" data-id="${escapeHtml(product.id)}">${product.Is_active?"Hide":"Show"}</button>
+                        <button type="button" class="delete-product-btn" data-id="${escapeHtml(product.id)}">Delete</button>
+                    </div>
                 </article>
             `;
         }).join("");
@@ -1978,6 +2041,76 @@ async function loadProducts(){
         list.innerHTML=`<p class="error-message">${escapeHtml(error.message||"Could not load products.")}</p>`;
     }
 }
+
+/* ===== Editing a product ===== */
+function exitEditMode(keepMessage){
+    editingProduct=null;
+    document.getElementById("editBanner")?.classList.add("hidden");
+    const save=document.getElementById("saveProductButton");
+    if(save)save.textContent="Save Product";
+    if(!keepMessage&&productFormMessage){productFormMessage.textContent="";productFormMessage.className="";}
+}
+
+function startEditing(product){
+    editingProduct=product;
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??"";};
+    set("productName",product.Name);
+    set("productDescription",product.Description);
+    set("productPrice",product.Price);
+    set("clientName",product.client_name);
+    set("websiteUrl",product.website_url);
+    set("productWebsiteUrl",product.website_url);
+    if(projectType)projectType.value=product.project_type||"";
+    updateProjectTypeFields();
+    const pkg=document.getElementById("productPackage");
+    if(pkg){
+        const want=String(product.package||"").toLowerCase();
+        const opt=[...pkg.options].find(o=>o.value.toLowerCase()===want);
+        pkg.value=opt?opt.value:"";
+    }
+    const active=document.getElementById("productActive");if(active)active.checked=!!product.Is_active;
+    const featured=document.getElementById("productFeatured");if(featured)featured.checked=!!product.is_featured;
+    document.querySelectorAll('#productForm input[type="file"]').forEach(f=>{f.value="";});
+
+    document.getElementById("editName").textContent=product.Name||"";
+    const pic=product.Image_url||product.front_image_url;
+    document.getElementById("editMedia").innerHTML=
+        (pic?'<img src="'+escapeHtml(pic)+'" alt="" style="height:64px;width:64px;object-fit:cover;border-radius:8px;"> ':"")+
+        (product.demo_video_url?"<small>Has a demo video.</small>":"");
+    document.getElementById("editBanner").classList.remove("hidden");
+    const save=document.getElementById("saveProductButton");
+    if(save)save.textContent="Save changes";
+    if(productFormMessage){productFormMessage.textContent="";productFormMessage.className="";}
+    renderLivePreview();
+    showView("products");
+    document.getElementById("editBanner").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+document.getElementById("cancelEditBtn")?.addEventListener("click",()=>{
+    productForm.reset();
+    exitEditMode(false);
+    updateProjectTypeFields();
+    renderLivePreview();
+});
+productForm?.addEventListener("reset",()=>{if(editingProduct)exitEditMode(false);});
+
+document.getElementById("productsList")?.addEventListener("click",async e=>{
+    const editBtn=e.target.closest(".edit-product-btn");
+    if(editBtn){
+        const product=productsCache[editBtn.dataset.id];
+        if(product)startEditing(product);
+        return;
+    }
+    const toggleBtn=e.target.closest(".toggle-product-btn");
+    if(toggleBtn){
+        const product=productsCache[toggleBtn.dataset.id];
+        if(!product)return;
+        toggleBtn.disabled=true;
+        const {error}=await supabaseClient.from(PRODUCT_TABLE).update({Is_active:!product.Is_active}).eq("id",product.id);
+        if(error){alert(error.message||"Could not update.");toggleBtn.disabled=false;return;}
+        await loadProducts();
+    }
+});
 
 let deleteInProgress=false;
 

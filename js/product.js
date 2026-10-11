@@ -73,6 +73,7 @@
                     ${product.Description ? `<h2 data-i18n="new.description">Description</h2><p class="product-desc">${escapeHtml(product.Description)}</p>` : ""}
                     <div class="product-actions">
                         ${info.hasPrice ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(images[0] || "")}" data-i18n="new.addToCart">Add to Cart</button>` : ""}
+                        ${info.hasPrice ? `<button type="button" class="button button-secondary buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(images[0] || "")}" data-i18n="new.buyNow">Buy Now</button>` : ""}
                         ${demoButton}
                         ${info.hasPrice ? `<a href="https://wa.me/2349124147362?text=${planText}" target="_blank" rel="noopener" class="button button-secondary" data-i18n="new.installmentPay">Installment pay</a>` : ""}
                         <a href="https://wa.me/2349124147362?text=${waText}" target="_blank" rel="noopener" class="button wa-full" data-i18n="new.contactWhatsapp">Contact via WhatsApp</a>

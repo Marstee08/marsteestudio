@@ -1173,7 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
         head.querySelector(".drawer-close").addEventListener("click", () => setMenu(false));
         overlay.addEventListener("click", () => setMenu(false));
         document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
-        window.addEventListener("resize", () => { if (window.innerWidth > 760) setMenu(false); });
+        window.addEventListener("resize", () => { if (window.innerWidth > 1280) setMenu(false); });
         mainNav.querySelectorAll("a.nav-link, a.nav-button").forEach(link => link.addEventListener("click", () => setMenu(false)));
     }
 
@@ -1343,6 +1343,7 @@ async function loadCatalogueProducts() {
                         <div class="catalogue-card-actions">
                             ${demoButton}
                             ${priceHasValue ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(productName)}" data-price="${price}" data-price-usd="${priceUsd}" data-image="${escapeHtml(image || "")}">Add to Cart</button>` : ""}
+                            ${priceHasValue ? `<button type="button" class="button button-secondary buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(productName)}" data-price="${price}" data-price-usd="${priceUsd}" data-image="${escapeHtml(image || "")}" data-i18n="new.buyNow">Buy Now</button>` : ""}
                             <a href="https://wa.me/2349124147362?text=${whatsappMessage}" target="_blank" rel="noopener" class="button button-secondary cart-chat-btn">Chat on WhatsApp</a>
                         </div>
                     </div>
@@ -1572,20 +1573,27 @@ function startProductStage(stage) {
     };
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const stop = () => { if (timer) clearInterval(timer); timer = null; };
-    const start = () => { stop(); if (slides.length > 1 && !calm) timer = setInterval(() => { if (!document.hidden) show(current + 1); }, 5500); };
+    const start = () => { stop(); if (slides.length > 1 && !calm) timer = setInterval(() => { if (!document.hidden) show(current + 1); }, 4000); };
 
     dots.forEach((d, i) => d.addEventListener("click", () => { show(i); start(); }));
-    let x0 = null;
-    stage.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; stop(); }, { passive: true });
-    stage.addEventListener("touchend", e => {
-        if (x0 !== null) {
-            const dx = e.changedTouches[0].clientX - x0;
-            if (Math.abs(dx) > 45) show(current + (dx < 0 ? 1 : -1));
-        }
-        x0 = null; start();
-    }, { passive: true });
-    stage.addEventListener("mouseenter", stop);
-    stage.addEventListener("mouseleave", start);
+
+    // the swipe/hover listeners are added once; they always talk to the newest set of slides
+    stage.__stopStage = stop;
+    stage.__ctl = { next: d => show(current + d), start, stop };
+    if (!stage.__bound) {
+        stage.__bound = true;
+        let x0 = null;
+        stage.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; stage.__ctl.stop(); }, { passive: true });
+        stage.addEventListener("touchend", e => {
+            if (x0 !== null) {
+                const dx = e.changedTouches[0].clientX - x0;
+                if (Math.abs(dx) > 45) stage.__ctl.next(dx < 0 ? 1 : -1);
+            }
+            x0 = null; stage.__ctl.start();
+        }, { passive: true });
+        stage.addEventListener("mouseenter", () => stage.__ctl.stop());
+        stage.addEventListener("mouseleave", () => stage.__ctl.start());
+    }
 
     show(0);
     start();
@@ -1612,112 +1620,100 @@ document.addEventListener("click", event => {
     location.href = "checkout.html";
 });
 
+const HOME_PRODUCTS_CACHE = "mts_home_products";
+
+async function renderHomeProducts(rows) {
+    const row = document.getElementById("homeProductsRow");
+    const section = document.getElementById("homeProducts");
+    if (!row || !section || !rows.length) return;
+
+    if (row.__stopStage) row.__stopStage();
+    row.innerHTML = (await Promise.all(rows.map(mtsFeedSlideHtml))).join("");
+    section.hidden = false;
+    document.documentElement.classList.add("has-product-feed");
+    refreshDisplayedPrices();
+    retranslate();
+    startProductStage(row);
+
+    row.querySelectorAll(".mslide img").forEach(img => {
+        const tint = () => {
+            const t = mtsTintFromImage(img);
+            if (t) img.closest(".mslide").style.setProperty("--tint", t);
+        };
+        if (img.complete && img.naturalWidth) tint();
+        else img.addEventListener("load", tint, { once: true });
+    });
+}
+
 async function loadHomeProducts() {
     const row = document.getElementById("homeProductsRow");
     const section = document.getElementById("homeProducts");
-    if (!row || !section || !siteSupabaseClient) return;
+    if (!row || !section) return;
 
+    // 1) show the last saved products straight away (instant on repeat visits)
+    let shown = "";
+    try {
+        const saved = JSON.parse(localStorage.getItem(HOME_PRODUCTS_CACHE));
+        if (Array.isArray(saved) && saved.length) {
+            shown = JSON.stringify(saved);
+            await renderHomeProducts(saved);
+        }
+    } catch (e) {}
+
+    if (!siteSupabaseClient) return;
     try {
         const { data, error } = await siteSupabaseClient
             .from("Product").select("*").eq("Is_active", true);
         if (error) throw error;
-        if (!data?.length) return;
-
+        if (!data?.length) {
+            try { localStorage.removeItem(HOME_PRODUCTS_CACHE); } catch (e) {}
+            return;
+        }
         const picks = [...data]
             .sort((a, b) => Number(!!b.is_featured) - Number(!!a.is_featured))
             .slice(0, 6);
-
-        row.innerHTML = (await Promise.all(picks.map(mtsFeedSlideHtml))).join("");
-        section.hidden = false;
-        document.documentElement.classList.add("has-product-feed");
-        refreshDisplayedPrices();
-        retranslate();
-        startProductStage(row);
-
-        row.querySelectorAll(".mslide img").forEach(img => {
-            const tint = () => {
-                const t = mtsTintFromImage(img);
-                if (t) img.closest(".mslide").style.setProperty("--tint", t);
-            };
-            if (img.complete && img.naturalWidth) tint();
-            else img.addEventListener("load", tint, { once: true });
-        });
+        const fresh = JSON.stringify(picks);
+        try { localStorage.setItem(HOME_PRODUCTS_CACHE, fresh); } catch (e) {}
+        if (fresh !== shown) await renderHomeProducts(picks);   // only redraw when something changed
     } catch (error) {
         console.warn("Mars Tee Studio: home products unavailable.", error);
     }
 }
 
-
-/* =========================================================
-   FOOTER "INSTALL APP" LINK + CATALOGUE SEARCH + TOAST
-   ========================================================= */
-function mtsToast(message) {
-    document.querySelectorAll(".mts-toast").forEach(t => t.remove());
-    const toast = document.createElement("div");
-    toast.className = "mts-toast";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 6000);
+// Cart sits in the header on phones/tablets/small laptops (next to the menu button), inside the bar on big screens.
+function placeCartIcon() {
+    const btn = document.querySelector(".cart-icon-btn");
+    const container = document.querySelector(".nav-container");
+    const nav = document.querySelector(".main-nav");
+    const toggle = document.querySelector(".menu-toggle");
+    if (!btn || !container || !nav || !toggle) return;
+    const small = window.matchMedia("(max-width: 1280px)").matches;
+    if (small && btn.parentElement !== container) {
+        container.insertBefore(btn, toggle);
+    } else if (!small && btn.parentElement !== nav) {
+        const theme = nav.querySelector(".theme-toggle");
+        nav.insertBefore(btn, theme || null);
+    }
 }
-
-function setupInstallAppLink() {
-    const links = document.querySelectorAll(".install-app-link");
-    if (!links.length) return;
-    const installed = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-    links.forEach(link => {
-        if (installed) { link.hidden = true; return; }
-        link.addEventListener("click", async event => {
-            event.preventDefault();
-            if (deferredInstallPrompt) {
-                deferredInstallPrompt.prompt();
-                await deferredInstallPrompt.userChoice;
-                deferredInstallPrompt = null;
-                return;
-            }
-            const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-            mtsToast(ios
-                ? "On iPhone: tap the Share icon, then \"Add to Home Screen\"."
-                : "Open your browser menu (⋮) and choose \"Install app\" or \"Add to Home screen\".");
-        });
-    });
-}
-
-function setupCatalogueSearch() {
-    const input = document.getElementById("catalogueSearch");
-    const grid = document.querySelector(".catalogue-grid");
-    if (!input || !grid) return;
-
-    const apply = () => {
-        const q = input.value.trim().toLowerCase();
-        let shown = 0;
-        grid.querySelectorAll(".catalogue-card").forEach(card => {
-            const match = !q || card.textContent.toLowerCase().includes(q);
-            card.classList.toggle("search-hidden", !match);
-            if (match && !card.hidden) shown++;
-        });
-        let empty = grid.querySelector(".catalogue-empty-search");
-        if (q && shown === 0) {
-            if (!empty) {
-                empty = document.createElement("p");
-                empty.className = "catalogue-empty-search";
-                grid.appendChild(empty);
-            }
-            empty.textContent = "No products match \"" + input.value.trim() + "\".";
-        } else if (empty) {
-            empty.remove();
-        }
-    };
-    input.addEventListener("input", apply);
-    // cards are loaded asynchronously, so re-apply when the grid changes
-    new MutationObserver(apply).observe(grid, { childList: true });
-    const preset = new URLSearchParams(location.search).get("q");
-    if (preset) { input.value = preset; apply(); }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-    setupInstallAppLink();
-    setupCatalogueSearch();
-    if (getActiveCurrency() !== "NGN") fetchLiveRates().then(refreshDisplayedPrices);
+    placeCartIcon();
+    window.matchMedia("(max-width: 1280px)").addEventListener("change", placeCartIcon);
+});
+
+// Review stars: colour them from JS so it works in every browser (no :has() needed)
+document.addEventListener("change", event => {
+    const input = event.target.closest && event.target.closest(".rating-selector input");
+    if (!input) return;
+    const chosen = Number(input.value);
+    input.closest(".rating-selector").querySelectorAll("label").forEach(label => {
+        const value = Number(label.querySelector("input")?.value);
+        label.classList.toggle("is-on", value <= chosen);
+    });
+});
+document.addEventListener("reset", event => {
+    if (event.target.matches && event.target.matches("#reviewForm")) {
+        event.target.querySelectorAll(".rating-selector label").forEach(l => l.classList.remove("is-on"));
+    }
 });
 
 loadCatalogueProducts();
@@ -2139,14 +2135,18 @@ window.addEventListener("load", () => {
    ========================================================= */
 
 const HERO_CACHE_KEY = "mts_hero_slides";
+const HERO_SLIDE_MS = 4000;
 
-// Slides are managed from Admin -> Slides. If the database can't be reached
-// (or has no active slides) the two slides written into index.html are shown.
-async function loadHeroSlideData() {
-    const cached = () => {
-        try { return JSON.parse(localStorage.getItem(HERO_CACHE_KEY)) || null; } catch (e) { return null; }
-    };
-    if (typeof siteSupabaseClient === "undefined" || !siteSupabaseClient) return cached();
+function readHeroCache() {
+    try {
+        const v = JSON.parse(localStorage.getItem(HERO_CACHE_KEY));
+        return Array.isArray(v) && v.length ? v : null;
+    } catch (e) { return null; }
+}
+
+// Slides are managed from Admin -> Slides.
+async function fetchHeroSlides() {
+    if (typeof siteSupabaseClient === "undefined" || !siteSupabaseClient) return null;
     try {
         const query = siteSupabaseClient
             .from("hero_slides")
@@ -2155,7 +2155,7 @@ async function loadHeroSlideData() {
             .order("sort_order", { ascending: true });
         const { data, error } = await Promise.race([
             query,
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 2500))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 6000))
         ]);
         if (error) throw error;
         if (Array.isArray(data)) {
@@ -2163,9 +2163,9 @@ async function loadHeroSlideData() {
             return data;
         }
     } catch (e) {
-        console.warn("Mars Tee Studio: hero slides unavailable, using saved/default ones.", e);
+        console.warn("Mars Tee Studio: hero slides unavailable, keeping the ones already showing.", e);
     }
-    return cached();
+    return null;
 }
 
 function renderHeroSlides(slider, rows) {
@@ -2189,44 +2189,53 @@ function renderHeroSlides(slider, rows) {
     }
 }
 
-async function setupHeroSlider() {
-    const slider = document.getElementById("heroSlider");
-    if (!slider) return;
-
-    const rows = await loadHeroSlideData();
-    if (rows && rows.length) renderHeroSlides(slider, rows);
-    slider.classList.remove("is-loading");
-
+function initHeroSliderControls(slider) {
     const slides = [...slider.querySelectorAll(".hero-slide")];
     const dots = [...slider.querySelectorAll(".hero-slider-dot")];
     const prevBtn = slider.querySelector(".hero-slider-prev");
     const nextBtn = slider.querySelector(".hero-slider-next");
     slider.classList.toggle("single", slides.length < 2);
-    if (slides.length < 2) return;
 
     let current = 0;
-    let autoTimer = null;
-
-    function show(index) {
+    let timer = null;
+    const show = index => {
+        if (!slides.length) return;
         current = (index + slides.length) % slides.length;
         slides.forEach((slide, i) => slide.classList.toggle("is-active", i === current));
         dots.forEach((dot, i) => dot.classList.toggle("is-active", i === current));
-    }
+    };
+    const stop = () => { if (timer) clearInterval(timer); timer = null; };
+    const start = () => { stop(); if (slides.length > 1) timer = setInterval(() => show(current + 1), HERO_SLIDE_MS); };
 
-    function startAuto() {
-        stopAuto();
-        autoTimer = setInterval(() => show(current + 1), 6000);
-    }
-    function stopAuto() {
-        if (autoTimer) clearInterval(autoTimer);
-    }
-
-    prevBtn?.addEventListener("click", () => { show(current - 1); startAuto(); });
-    nextBtn?.addEventListener("click", () => { show(current + 1); startAuto(); });
-    dots.forEach((dot, i) => dot.addEventListener("click", () => { show(i); startAuto(); }));
+    const onPrev = () => { show(current - 1); start(); };
+    const onNext = () => { show(current + 1); start(); };
+    prevBtn?.addEventListener("click", onPrev);
+    nextBtn?.addEventListener("click", onNext);
+    dots.forEach((dot, i) => dot.addEventListener("click", () => { show(i); start(); }));
 
     show(0);
-    startAuto();
+    start();
+    return { destroy() { stop(); prevBtn?.removeEventListener("click", onPrev); nextBtn?.removeEventListener("click", onNext); } };
+}
+
+// Starts at once with what is already on the page (the saved copy, or the two built-in slides),
+// then quietly switches only if the database has something different.
+async function setupHeroSlider() {
+    const slider = document.getElementById("heroSlider");
+    if (!slider) return;
+
+    const cached = readHeroCache();
+    if (cached) renderHeroSlides(slider, cached);
+    slider.classList.remove("is-loading");
+    let controls = initHeroSliderControls(slider);
+
+    const fresh = await fetchHeroSlides();
+    if (!fresh || !fresh.length) return;
+    const showing = [...slider.querySelectorAll(".hero-slide img")].map(img => img.getAttribute("src")).join("|");
+    if (fresh.map(r => r.image_url).join("|") === showing) return;
+    controls.destroy();
+    renderHeroSlides(slider, fresh);
+    controls = initHeroSliderControls(slider);
 }
 
 document.addEventListener("DOMContentLoaded", setupHeroSlider);
@@ -2265,7 +2274,7 @@ window.addEventListener("load", () => {
     }
 
     intro.addEventListener("click", endIntro);
-    setTimeout(endIntro, 4900);
+    setTimeout(endIntro, 2000);
 });
 
 /* =========================================================
