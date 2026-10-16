@@ -53,7 +53,12 @@
             name: document.getElementById("checkoutName")?.value.trim() || "",
             email: document.getElementById("checkoutEmail")?.value.trim() || "",
             phone: document.getElementById("checkoutPhone")?.value.trim() || "",
-            notes: document.getElementById("checkoutAddress")?.value.trim() || ""
+            notes: document.getElementById("checkoutAddress")?.value.trim() || "",
+            business: document.getElementById("ckBusiness")?.value.trim() || "",
+            brief: document.getElementById("ckBrief")?.value.trim() || "",
+            style: document.getElementById("ckStyle")?.value.trim() || "",
+            links: document.getElementById("ckLinks")?.value.trim() || "",
+            domain: document.getElementById("ckDomain")?.value.trim() || ""
         };
     }
 
@@ -108,6 +113,10 @@
                 customer_name: values.name,
                 customer_email: values.email,
                 customer_phone: values.phone,
+                project_details: {
+                    business: values.business, brief: values.brief, style: values.style,
+                    links: values.links, domain: values.domain, notes: values.notes
+                },
                 items: cart,
                 total_amount: total,
                 paystack_reference: reference,
@@ -145,6 +154,11 @@
     function validateForm(values) {
         if (!values.name || !values.email || !values.phone) {
             alert("Please fill in your name, email, and phone number before continuing.");
+            return false;
+        }
+        if (!values.business || !values.brief) {
+            alert("Please add your business or project name and a short description of what we should build. It helps us start right away.");
+            (document.getElementById(!values.business ? "ckBusiness" : "ckBrief"))?.focus();
             return false;
         }
         return true;
@@ -200,6 +214,7 @@
                     custom_fields: [
                         { display_name: "Name", variable_name: "name", value: values.name },
                         { display_name: "Phone", variable_name: "phone", value: values.phone },
+                        { display_name: "Project", variable_name: "project", value: values.business },
                         { display_name: "Notes", variable_name: "notes", value: values.notes },
                         { display_name: "Order", variable_name: "order", value: cart.map(i => `${i.name} x${i.qty}`).join(", ") }
                     ]

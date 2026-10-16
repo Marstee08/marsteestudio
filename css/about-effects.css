@@ -1,0 +1,223 @@
+/* =========================================
+   ABOUT PAGE — LUXURY PARALLAX + 3D EFFECTS
+   Add-on file. Does not touch style.css.
+   Uses the independent CSS `rotate` / `translate`
+   / `scale` properties so nothing here fights your
+   existing reveal animations (which use `transform`).
+   ========================================= */
+
+/* ---- Hero: cinematic parallax with ambient glow ---- */
+.page-hero {
+  overflow: hidden;
+  perspective: 1200px;
+  position: relative;
+}
+
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at 78% 22%,
+    color-mix(in srgb, var(--blue) 16%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+  animation: heroGlowBreathe 7s ease-in-out infinite;
+  z-index: 0;
+}
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes heroGlowBreathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* ---- Monogram: continuous 3D float + scroll-driven tilt ---- */
+.about-intro-visual {
+  perspective: 1400px;
+}
+
+.about-monogram {
+  will-change: transform;
+  position: relative;
+}
+
+.about-monogram::after {
+  content: "";
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--white) 35%, transparent),
+    transparent 70%
+  );
+  opacity: 0.5;
+  z-index: -1;
+  animation: monogramHalo 4s ease-in-out infinite;
+}
+
+@keyframes monogramHalo {
+  0%, 100% { opacity: 0.35; scale: 0.95; }
+  50%      { opacity: 0.65; scale: 1.08; }
+}
+
+/* ---- Value cards: big luxury 3D tilt + glass glare ---- */
+.values-grid {
+  perspective: 1600px;
+}
+
+.value-card {
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  /* merged with your original reveal timing so the
+     scroll fade-in still animates exactly as before */
+  transition:
+    opacity .75s cubic-bezier(.16,1,.3,1),
+    transform .85s cubic-bezier(.16,1,.3,1),
+    rotate .5s cubic-bezier(.16,1,.3,1),
+    scale .5s cubic-bezier(.16,1,.3,1),
+    box-shadow .5s cubic-bezier(.16,1,.3,1);
+}
+
+.value-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--white) 55%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.value-card:hover::before {
+  opacity: 0.55;
+}
+
+.value-card:hover {
+  scale: 1.035;
+  box-shadow:
+    0 40px 70px -20px color-mix(in srgb, var(--blue) 35%, transparent),
+    0 15px 30px rgba(0, 0, 0, 0.12);
+}
+
+.value-card > * {
+  position: relative;
+  z-index: 1;
+  transform: translateZ(35px);
+}
+
+/* ---- Service list items: luxury 3D tilt + glass glare ---- */
+.about-service-list {
+  perspective: 1600px;
+}
+
+.about-service-item {
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition:
+    0.3s ease,
+    rotate .45s cubic-bezier(.16,1,.3,1),
+    scale .45s cubic-bezier(.16,1,.3,1),
+    box-shadow .45s cubic-bezier(.16,1,.3,1);
+}
+
+.about-service-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--blue-light) 70%, transparent),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.about-service-item:hover::before {
+  opacity: 0.8;
+}
+
+.about-service-item:hover {
+  scale: 1.02;
+  box-shadow: 0 25px 45px -15px color-mix(in srgb, var(--blue) 30%, transparent);
+}
+
+.about-service-item > * {
+  position: relative;
+  z-index: 1;
+  transform: translateZ(26px);
+}
+
+/* ---- Story points: dramatic 3D scroll-in reveal ----
+   Self-contained: driven by its own scroll-watcher in
+   about-effects.js (the .story-reveal class below),
+   not by your site's existing reveal system — so it
+   can't get tangled up with anything else on the page. */
+.story-points {
+  perspective: 1800px;
+}
+
+.story-point {
+  /* pure X-axis tip (like a flap lifting up), not an
+     angled axis — keeps the row looking flat/rectangular
+     mid-motion instead of visually skewed */
+  rotate: 1 0 0 45deg;
+  translate: 0 60px;
+  scale: 0.85;
+  transform-origin: top center;
+  transition:
+    rotate 1s cubic-bezier(.16,1,.3,1),
+    translate 1s cubic-bezier(.16,1,.3,1),
+    scale 1s cubic-bezier(.16,1,.3,1);
+}
+
+.story-point.story-reveal {
+  rotate: 1 0 0 0deg;
+  translate: 0 0;
+  scale: 1;
+}
+
+.story-point:hover {
+  scale: 1.015;
+}
+
+/* ---- Respect users who prefer less motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .page-hero::before,
+  .about-monogram::after {
+    animation: none !important;
+  }
+
+  .about-monogram,
+  .value-card,
+  .about-service-item,
+  .story-point {
+    transition: none !important;
+    rotate: none !important;
+    scale: none !important;
+    translate: none !important;
+  }
+
+  .value-card > *,
+  .about-service-item > * {
+    transform: none !important;
+  }
+}

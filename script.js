@@ -1102,28 +1102,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.documentElement.classList.toggle("dark-theme", isDark);
     }
 
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    if (storedTheme === "dark" || storedTheme === "light") {
-        applyTheme(storedTheme === "dark");
-    } else {
-        applyTheme(systemTheme.matches);
-    }
-
-    themeToggle?.addEventListener("click", () => {
-        const isDark = !document.documentElement.classList.contains("dark-theme");
-        applyTheme(isDark);
-        localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
-    });
-
-    if (typeof systemTheme.addEventListener === "function") {
-        systemTheme.addEventListener("change", event => {
-            // Once the visitor has made an explicit choice, stop
-            // following the OS setting so their choice sticks.
-            if (!localStorage.getItem(THEME_STORAGE_KEY)) {
-                applyTheme(event.matches);
-            }
-        });
-    }
+    // Dark theme only: the light theme and its toggle were removed.
+    applyTheme(true);
+    try { localStorage.removeItem(THEME_STORAGE_KEY); } catch (e) {}
 
     const menuToggle = document.querySelector(".menu-toggle");
     const mainNav = document.querySelector(".main-nav");
@@ -1221,10 +1202,12 @@ const TIER_PRICING = {
    Visitors who switch to any currency other than Naira see these
    USD web-development prices (converted to their currency) instead of
    the Naira price converted, because the US market for web development
-   is priced very differently from the Nigerian one. A category/tier with
-   no entry here (digital experiences) simply converts from Naira. */
+   is priced very differently from the Nigerian one. Digital experiences
+   have their own USD prices too, so the dollar price is a real market
+   price rather than a straight Naira conversion. */
 const TIER_PRICING_USD = {
-    web: { basic: 300, standard: 700, premium: 1500, luxury: 3500 }
+    web: { basic: 300, standard: 700, premium: 1500, luxury: 3500 },
+    digital: { basic: 25, standard: 50, premium: 100, luxury: 200 }
 };
 
 // Some tiers are genuinely priced as ranges/open-ended rather than
@@ -1881,7 +1864,7 @@ async function loadPortfolioProducts() {
         if (!showAll && data.length > PREVIEW_COUNT) {
             grid.insertAdjacentHTML("afterend", `
                 <div class="see-more-wrap">
-                    <a href="portfolio.html?view=all" class="button button-secondary">See More Work →</a>
+                    <a href="catalogue.html" class="button button-secondary">See More Work →</a>
                 </div>
             `);
         } else {
@@ -2495,3 +2478,44 @@ function setupBackToTop() {
 
 console.log("%cMars Tee Studio", "font-size:22px;font-weight:800;color:#2563eb;");
 console.log("%cDigital experiences. Premium design. Built to impress.", "font-size:12px;color:#64748b;");
+
+// Hero: portrait tilts toward the pointer (desktop only, skipped for reduced motion)
+(function () {
+    const hero = document.querySelector(".hero-section");
+    if (!hero || matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
+    hero.addEventListener("pointermove", e => {
+        const r = hero.getBoundingClientRect();
+        hero.style.setProperty("--mx", ((e.clientX - r.left) / r.width - 0.5).toFixed(3));
+        hero.style.setProperty("--my", ((e.clientY - r.top) / r.height - 0.5).toFixed(3));
+    });
+    hero.addEventListener("pointerleave", () => { hero.style.setProperty("--mx", 0); hero.style.setProperty("--my", 0); });
+})();
+
+// Luxury layer: cursor glow, card spotlight, scroll progress
+(function () {
+    const bar = document.createElement("div"); bar.className = "mts-progress"; document.body.appendChild(bar);
+    addEventListener("scroll", () => {
+        const h = document.documentElement; const m = h.scrollHeight - h.clientHeight;
+        bar.style.transform = "scaleX(" + (m > 0 ? h.scrollTop / m : 0) + ")";
+    }, { passive: true });
+    if (matchMedia("(pointer: coarse), (prefers-reduced-motion: reduce)").matches) return;
+    const glow = document.createElement("div"); glow.className = "mts-glow"; document.body.appendChild(glow);
+    addEventListener("pointermove", e => {
+        glow.style.transform = "translate(" + e.clientX + "px," + e.clientY + "px)";
+        const c = e.target.closest && e.target.closest(".service-card,.catalogue-card,.cta-box");
+        if (c) { const r = c.getBoundingClientRect(); c.style.setProperty("--px", (e.clientX - r.left) + "px"); c.style.setProperty("--py", (e.clientY - r.top) + "px"); }
+    }, { passive: true });
+})();
+
+// About portrait: gentle tilt toward the pointer (desktop only)
+(function () {
+    const v = document.querySelector(".ab-visual");
+    if (!v || matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
+    const host = v.closest("section") || v;
+    host.addEventListener("pointermove", e => {
+        const r = v.getBoundingClientRect();
+        v.style.setProperty("--mx", Math.max(-1, Math.min(1, (e.clientX - r.left) / r.width - 0.5)).toFixed(3));
+        v.style.setProperty("--my", Math.max(-1, Math.min(1, (e.clientY - r.top) / r.height - 0.5)).toFixed(3));
+    });
+    host.addEventListener("pointerleave", () => { v.style.setProperty("--mx", 0); v.style.setProperty("--my", 0); });
+})();

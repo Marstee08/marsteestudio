@@ -466,6 +466,8 @@
         .order-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
         .order-top strong { font-size: 1.05rem; }
         .order-meta { color: var(--admin-text-muted); font-size: .86rem; line-height: 1.6; word-break: break-word; }
+        .order-brief { margin: 10px 0; padding: 10px 12px; border-radius: 10px; background: rgba(47,140,255,.08); border: 1px solid rgba(47,140,255,.25); font-size: .88rem; line-height: 1.5; }
+        .order-brief b { color: #4aa3ff; }
         .order-items { margin: 0; padding-left: 18px; font-size: .92rem; line-height: 1.7; }
         .order-total { font-size: 1.2rem; font-weight: 800; color: #ffd60a; }
         .order-badge { padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; text-transform: capitalize; }
@@ -1546,7 +1548,7 @@ function renderOrders(){
         return '<article class="order-card" data-id="' + ordersEsc(o.id) + '">' +
             '<div class="order-top"><strong>' + ordersEsc(o.customer_name || "Unnamed customer") + '</strong><span class="order-badge ' + ordersEsc(st) + '">' + ordersEsc(st) + '</span></div>' +
             '<div class="order-meta">' + ordersEsc(date) + '<br>' + ordersEsc(o.customer_email || "") + ' · ' + ordersEsc(o.customer_phone || "") + '<br>Ref: ' + ordersEsc(o.paystack_reference || "none") + '</div>' +
-            '<ul class="order-items">' + items.map(i => '<li>' + ordersEsc(i.name) + ' × ' + ordersEsc(i.qty) + ' (' + ordersNaira(Number(i.price) * Number(i.qty)) + ')</li>').join("") + '</ul>' +
+            (o.project_details ? '<div class="order-brief">' + [["business","Project"],["brief","Brief"],["style","Style"],["links","Links"],["domain","Domain"],["notes","Notes"]].filter(function (p) { return o.project_details[p[0]]; }).map(function (p) { return '<div><b>' + p[1] + ':</b> ' + ordersEsc(o.project_details[p[0]]) + '</div>'; }).join("") + '</div>' : "") + '<ul class="order-items">' + items.map(i => '<li>' + ordersEsc(i.name) + ' × ' + ordersEsc(i.qty) + ' (' + ordersNaira(Number(i.price) * Number(i.qty)) + ')</li>').join("") + '</ul>' +
             '<div class="order-total">' + ordersNaira(o.total_amount) + '</div>' +
             '<div class="order-actions"><select class="order-status">' +
             ["pending","paid","failed","completed","cancelled"].map(s => '<option value="' + s + '"' + (s === st ? " selected" : "") + '>' + s + '</option>').join("") +
