@@ -312,3 +312,24 @@
         checkLoginState();
     });
 })();
+
+
+// In-app browsers (TikTok, Instagram, Facebook...) block the clipboard inside Paystack's
+// payment window, which makes "copy account number" fail. Warn those visitors up front.
+(function () {
+    const ua = navigator.userAgent || "";
+    const inApp = /Instagram|FBAN|FBAV|FB_IAB|musical_ly|TikTok|Bytedance|Snapchat|Twitter|LinkedInApp|Line\/|; wv\)/i.test(ua);
+    const box = document.getElementById("inAppNotice");
+    if (!box || !inApp) return;
+    box.hidden = false;
+    const btn = document.getElementById("copyPageLink");
+    btn?.addEventListener("click", async () => {
+        const link = location.href.split("#")[0];
+        try {
+            await navigator.clipboard.writeText(link);
+            btn.textContent = "Link copied - paste it in Chrome or Safari";
+        } catch (e) {
+            window.prompt("Copy this link and open it in Chrome or Safari:", link);
+        }
+    });
+})();

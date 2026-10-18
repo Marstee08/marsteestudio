@@ -87,7 +87,7 @@
 
 <div class="ck-main">
 <div class="checkout-form-card">
-<h2 class="ck-ic ck-user">Contact Details</h2>
+<h2 class="ck-ic ck-user" data-i18n="ck.contactTitle">Contact Details</h2>
 
 <p id="checkoutLoginBanner" class="checkout-login-banner is-hidden"></p>
 <p class="checkout-guest-note" data-i18n-html="checkout.guestNote">Checking out as a guest? No problem - fill in your details below. <a href="account.html">Log in</a> first if you'd like this order saved to your order history.</p>
@@ -114,33 +114,33 @@
 </form>
 </div>
 <div class="checkout-form-card ck-project-card">
-<h2 class="ck-ic ck-brief">Your Project Details</h2>
-<p class="ck-project-intro">Tell us about what we are building. The more you share now, the faster we can start and deliver.</p>
+<h2 class="ck-ic ck-brief" data-i18n="ck.projectTitle">Your Project Details</h2>
+<p class="ck-project-intro" data-i18n="ck.projectIntro">Tell us about what we are building. The more you share now, the faster we can start and deliver.</p>
 <div class="form-group">
-<label for="ckBusiness">Business / Project Name <em>required</em></label>
-<input type="text" id="ckBusiness" placeholder="e.g. Ada's Kitchen" required>
+<label for="ckBusiness" data-i18n-html="ck.business">Business / Project Name <em>required</em></label>
+<input type="text" id="ckBusiness" data-i18n-placeholder="ck.businessPh" placeholder="e.g. Ada's Kitchen" required>
 </div>
 <div class="form-group">
-<label for="ckBrief">What should we build for you? <em>required</em></label>
-<textarea id="ckBrief" rows="4" placeholder="Describe your business, what the website or design should do, and who it is for." required></textarea>
+<label for="ckBrief" data-i18n-html="ck.brief">What should we build for you? <em>required</em></label>
+<textarea id="ckBrief" rows="4" data-i18n-placeholder="ck.briefPh" placeholder="Describe your business, what the website or design should do, and who it is for." required></textarea>
 </div>
 <div class="form-group">
-<label for="ckStyle">Style &amp; Colours</label>
-<input type="text" id="ckStyle" placeholder="e.g. Modern, dark with gold, clean and minimal">
+<label for="ckStyle" data-i18n="ck.style">Style &amp; Colours</label>
+<input type="text" id="ckStyle" data-i18n-placeholder="ck.stylePh" placeholder="e.g. Modern, dark with gold, clean and minimal">
 </div>
 <div class="form-group">
-<label for="ckLinks">Logo, Website &amp; Social Links</label>
-<textarea id="ckLinks" rows="2" placeholder="Paste links to your logo, current website, Instagram, TikTok, or inspiration you like."></textarea>
+<label for="ckLinks" data-i18n="ck.links">Logo, Website &amp; Social Links</label>
+<textarea id="ckLinks" rows="2" data-i18n-placeholder="ck.linksPh" placeholder="Paste links to your logo, current website, Instagram, TikTok, or inspiration you like."></textarea>
 </div>
 <div class="form-group">
-<label for="ckDomain">Preferred Domain Name</label>
-<input type="text" id="ckDomain" placeholder="e.g. adaskitchen.com">
+<label for="ckDomain" data-i18n="ck.domain">Preferred Domain Name</label>
+<input type="text" id="ckDomain" data-i18n-placeholder="ck.domainPh" placeholder="e.g. adaskitchen.com">
 </div>
 <div class="form-group">
-<label for="checkoutAddress">Anything Else We Should Know?</label>
-<textarea id="checkoutAddress" name="notes" rows="3" placeholder="Deadlines, special requests, content you will send us later."></textarea>
+<label for="checkoutAddress" data-i18n="ck.notes">Anything Else We Should Know?</label>
+<textarea id="checkoutAddress" name="notes" rows="3" data-i18n-placeholder="ck.notesPh" placeholder="Deadlines, special requests, content you will send us later."></textarea>
 </div>
-<div class="ck-whatsnext"><span>01</span> Pay securely <span>02</span> We message you on WhatsApp <span>03</span> We build and deliver</div>
+<div class="ck-whatsnext" data-i18n-html="ck.steps"><span>01</span> Pay securely <span>02</span> We message you on WhatsApp <span>03</span> We build and deliver</div>
 </div>
 </div>
 
@@ -153,11 +153,17 @@
 </div>
 <p id="checkoutTotalLocal" class="checkout-total-local" hidden></p>
 <div id="checkoutActions" class="checkout-actions">
+<div id="inAppNotice" class="ck-inapp" hidden>
+<strong>Open this page in Chrome or Safari to pay</strong>
+<span>You are inside an app browser (TikTok, Instagram, Facebook, etc.). It can block copying the bank transfer account number.</span>
+<button type="button" id="copyPageLink" class="button button-secondary">Copy page link</button>
+</div>
 <button type="button" id="payButton" class="button button-primary checkout-pay-btn" data-i18n="checkout.payButton">Pay with Paystack →</button>
 <button type="button" id="whatsappOrderButton" class="button button-secondary checkout-whatsapp-btn" data-i18n="checkout.whatsappButton">Order via WhatsApp Instead</button>
 <button type="button" id="paymentPlanButton" class="button button-secondary checkout-whatsapp-btn checkout-plan-btn" data-i18n="new.askPlan">Ask About a Payment Plan</button>
 <p class="checkout-secure"><span aria-hidden="true">🔒</span> <span data-i18n="new.securePay">Secure payment powered by Paystack</span></p>
 </div>
+<p class="checkout-note ck-copy-tip">Paying by bank transfer? If the copy button says "copy failed", press and hold the account number to copy it, or open this page in Chrome or Safari.</p>
 <p class="checkout-note" data-i18n="checkout.currencyNote">Your cart total is charged in Nigerian Naira (₦) regardless of the currency shown elsewhere on the site.</p>
 </div>
 
@@ -172,8 +178,8 @@
 <footer class="site-footer">
 <div class="container">
 <div class="mf-cta">
-<div><span class="mf-kicker">Start a project</span><h2>Let's build something <em>remarkable.</em></h2></div>
-<a href="contact.html" class="button button-primary">Start a Project →</a>
+<div><span class="mf-kicker" data-i18n="mf.kicker">Start a project</span><h2 data-i18n-html="mf.title">Let's build something <em>remarkable.</em></h2></div>
+<a href="contact.html" class="button button-primary" data-i18n="mf.button">Start a Project →</a>
 </div>
 <div class="mf-grid">
 <div class="mf-brand">

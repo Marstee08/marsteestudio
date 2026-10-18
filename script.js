@@ -525,9 +525,11 @@ function setupCartIcon() {
     btn.className = "cart-icon-btn";
     btn.setAttribute("aria-label", "View cart");
     btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.6 13.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6L23 6H6"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <defs><linearGradient id="mtsCartG" x1="3" y1="2" x2="21" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#7fd4ff"/><stop offset="1" stop-color="#2f8cff"/></linearGradient></defs>
+            <path d="M5.2 8h13.6l1.1 12.1a1 1 0 0 1-1 1.1H5.1a1 1 0 0 1-1-1.1L5.2 8z" stroke="url(#mtsCartG)"/>
+            <path d="M8.5 8V7a3.5 3.5 0 0 1 7 0v1" stroke="url(#mtsCartG)"/>
+            <path d="M12 12.2l.9 1.9 1.9.9-1.9.9-.9 1.9-.9-1.9-1.9-.9 1.9-.9z" stroke="url(#mtsCartG)" fill="rgba(127,212,255,.25)"/>
         </svg>
         <span class="cart-count is-hidden">0</span>
     `;
