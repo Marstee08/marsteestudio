@@ -575,6 +575,8 @@ document.addEventListener("DOMContentLoaded", setupAccountIcon);
 
 /* ---- Cart drawer ---- */
 
+const CART_BAG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.2 8h13.6l1.1 12.1a1 1 0 0 1-1 1.1H5.1a1 1 0 0 1-1-1.1L5.2 8z" stroke="currentColor"/><path d="M8.5 8V7a3.5 3.5 0 0 1 7 0v1" stroke="currentColor"/><path d="M12 12.2l.9 1.9 1.9.9-1.9.9-.9 1.9-.9-1.9-1.9-.9 1.9-.9z" stroke="currentColor"/></svg>';
+
 function renderCartDrawerContents() {
     const body = document.querySelector(".cart-drawer-body");
     const footer = document.querySelector(".cart-drawer-footer");
@@ -583,14 +585,15 @@ function renderCartDrawerContents() {
     const cart = getCart();
 
     if (!cart.length) {
-        body.innerHTML = `<p class="cart-empty">Your cart is empty.</p>`;
+        body.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">${CART_BAG_SVG}</div><strong>Your cart is empty</strong><p>Pick a package or digital experience and it will appear here.</p><a href="catalogue.html" class="button button-primary">Browse the Catalogue &rarr;</a></div>`;
         footer.innerHTML = "";
+        const cnt0 = document.querySelector(".cart-drawer-count"); if (cnt0) cnt0.textContent = "";
         return;
     }
 
     body.innerHTML = cart.map(item => `
         <div class="cart-item" data-id="${item.id}">
-            <div class="cart-item-image">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : ""}</div>
+            <div class="cart-item-image">${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">` : CART_BAG_SVG}</div>
             <div class="cart-item-info">
                 <strong>${escapeHtml(item.name)}</strong>
                 <span>${formatPrice(item.price)}</span>
@@ -600,7 +603,7 @@ function renderCartDrawerContents() {
                     <button type="button" class="cart-qty-btn" data-action="increase">+</button>
                 </div>
             </div>
-            <button type="button" class="cart-item-remove" aria-label="Remove">&times;</button>
+            <button type="button" class="cart-item-remove" aria-label="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
         </div>
     `).join("");
 
@@ -609,8 +612,12 @@ function renderCartDrawerContents() {
             <span>Total</span>
             <strong>${formatPrice(getCartTotal())}</strong>
         </div>
-        <button type="button" class="button button-primary cart-checkout-btn">Checkout →</button>
+        <button type="button" class="button button-primary cart-checkout-btn">Checkout &rarr;</button>
+        <button type="button" class="cart-continue-btn">Continue browsing</button>
+        <p class="cart-secure-note">&#128274; Secure payment powered by Paystack</p>
     `;
+    const cnt = document.querySelector(".cart-drawer-count");
+    if (cnt) { const n = cart.reduce((t, i) => t + (Number(i.qty) || 0), 0); cnt.textContent = n + (n === 1 ? " item" : " items"); }
 }
 
 function setupCartDrawer(forceOpen) {
@@ -623,7 +630,8 @@ function setupCartDrawer(forceOpen) {
             <div class="cart-drawer-backdrop"></div>
             <div class="cart-drawer-panel">
                 <div class="cart-drawer-header">
-                    <h3>Your Cart</h3>
+                    <div class="cart-head-text"><span class="cart-kicker">// YOUR CART</span><h3>Your <em>Bag</em></h3></div>
+                    <span class="cart-drawer-count"></span>
                     <button type="button" class="cart-drawer-close" aria-label="Close">&times;</button>
                 </div>
                 <div class="cart-drawer-body"></div>
@@ -659,6 +667,9 @@ function setupCartDrawer(forceOpen) {
         drawer.addEventListener("click", event => {
             if (event.target.closest(".cart-checkout-btn")) {
                 window.location.href = "checkout.html";
+            }
+            if (event.target.closest(".cart-continue-btn") || event.target.closest(".cart-empty a")) {
+                drawer.classList.add("hidden");
             }
         });
     }
@@ -1685,19 +1696,39 @@ document.addEventListener("DOMContentLoaded", () => {
     window.matchMedia("(max-width: 1280px)").addEventListener("change", placeCartIcon);
 });
 
-// Review stars: colour them from JS so it works in every browser (no :has() needed)
+// Review stars: n stars filled for a rating of n (hover previews, click sets it)
+const MSTAR_PATH = "M12 2.8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.6 6.2 20.7l1.1-6.5L2.6 9.6l6.5-.9z";
+function starsHtml(n) {
+    const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+    let out = "";
+    for (let i = 1; i <= 5; i++) out += `<svg class="mstar${i <= v ? " on" : ""}" viewBox="0 0 24 24" aria-hidden="true"><path d="${MSTAR_PATH}"/></svg>`;
+    return `<span class="mstars" role="img" aria-label="${v} out of 5 stars">${out}</span>`;
+}
+function paintRating(group, upTo, cls) {
+    group.querySelectorAll("label").forEach(label => {
+        const value = Number(label.querySelector("input")?.value);
+        label.classList.toggle(cls, value <= upTo);
+    });
+}
 document.addEventListener("change", event => {
     const input = event.target.closest && event.target.closest(".rating-selector input");
     if (!input) return;
-    const chosen = Number(input.value);
-    input.closest(".rating-selector").querySelectorAll("label").forEach(label => {
-        const value = Number(label.querySelector("input")?.value);
-        label.classList.toggle("is-on", value <= chosen);
-    });
+    const group = input.closest(".rating-selector");
+    paintRating(group, Number(input.value), "is-on");
+    paintRating(group, 0, "is-hover");
+});
+document.addEventListener("mouseover", event => {
+    const label = event.target.closest && event.target.closest(".rating-selector label");
+    if (!label) return;
+    paintRating(label.closest(".rating-selector"), Number(label.querySelector("input")?.value), "is-hover");
+});
+document.addEventListener("mouseout", event => {
+    const group = event.target.closest && event.target.closest(".rating-selector");
+    if (group && !group.contains(event.relatedTarget)) paintRating(group, 0, "is-hover");
 });
 document.addEventListener("reset", event => {
     if (event.target.matches && event.target.matches("#reviewForm")) {
-        event.target.querySelectorAll(".rating-selector label").forEach(l => l.classList.remove("is-on"));
+        event.target.querySelectorAll(".rating-selector label").forEach(l => l.classList.remove("is-on", "is-hover"));
     }
 });
 
@@ -1751,7 +1782,7 @@ async function loadReviews() {
             const avg = data.reduce((sum, r) => sum + (r.rating || 0), 0) / data.length;
             const avgRounded = Math.round(avg * 10) / 10;
             const fullStars = Math.round(avg);
-            const summaryStars = "★".repeat(fullStars) + "☆".repeat(5 - fullStars);
+            const summaryStars = starsHtml(fullStars);
             summaryEl.innerHTML = `
                 <span class="reviews-summary-score">${avgRounded.toFixed(1)}</span>
                 <div class="reviews-summary-detail">
@@ -1764,7 +1795,7 @@ async function loadReviews() {
         const AVATAR_COLORS = ["#0b63f6", "#e0473e", "#1a9c6b", "#c9750c", "#7b4fd6", "#0aa1a8"];
 
         const cards = data.map(review => {
-            const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+            const stars = starsHtml(review.rating);
             const date = review.created_at
                 ? new Date(review.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })
                 : "";

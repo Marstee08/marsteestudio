@@ -175,6 +175,7 @@ Create an account to see your order history any time, or skip this and checkout 
 <label for="loginPassword" data-i18n="account.password">Password</label>
 <input type="password" id="loginPassword" placeholder="Enter your password" required>
 </div>
+<div class="account-forgot-row"><button type="button" class="account-link-btn" id="showForgotBtn">Forgot password?</button></div>
 <p class="account-form-error" id="loginError"></p>
 <button type="submit" class="button button-primary" data-i18n="account.logInBtn">Log In →</button>
 </form>
@@ -184,6 +185,43 @@ Create an account to see your order history any time, or skip this and checkout 
 <button type="button" class="account-link-btn" id="showSignupBtn" data-i18n="account.signUpLink">Sign Up</button>
 </p>
 
+</div>
+
+<div id="forgotView" class="account-auth-view is-hidden">
+<div class="account-auth-header">
+<h2>Forgot password?</h2>
+<p>Enter your email and we will send you a security code.</p>
+</div>
+<form id="forgotForm" class="account-form">
+<div class="form-group">
+<label for="forgotEmail">Email Address</label>
+<input type="email" id="forgotEmail" placeholder="Enter your email" required>
+</div>
+<p class="account-form-error" id="forgotError"></p>
+<button type="submit" class="button button-primary">Send Code &rarr;</button>
+</form>
+<p class="account-switch-link"><button type="button" class="account-link-btn" id="forgotBackBtn">&larr; Back to log in</button></p>
+</div>
+
+<div id="otpView" class="account-auth-view is-hidden"><div id="resetOtpHost"></div></div>
+
+<div id="resetView" class="account-auth-view is-hidden">
+<div class="account-auth-header">
+<h2>Set a new password</h2>
+<p>Your code is verified. Choose a new password for your account.</p>
+</div>
+<form id="resetForm" class="account-form">
+<div class="form-group">
+<label for="resetPassword">New Password</label>
+<input type="password" id="resetPassword" placeholder="At least 6 characters" minlength="6" required>
+</div>
+<div class="form-group">
+<label for="resetConfirm">Confirm New Password</label>
+<input type="password" id="resetConfirm" placeholder="Repeat the new password" minlength="6" required>
+</div>
+<p class="account-form-error" id="resetError"></p>
+<button type="submit" class="button button-primary">Save New Password &rarr;</button>
+</form>
 </div>
 
 <p class="account-guest-note" data-i18n-html="account.guestNote">
@@ -202,6 +240,28 @@ Don't want an account? <a href="catalogue.html">Continue shopping as a guest</a>
 <p id="accountEmail"></p>
 </div>
 <button type="button" class="button button-secondary" id="logoutButton" data-i18n="account.logOut">Log Out</button>
+</div>
+
+<div class="account-security">
+<h3>Security</h3>
+<div id="changePwIntro">
+<p>Change your password. We will email you a security code to confirm it is you.</p>
+<p class="account-form-success is-hidden" id="changePwDone"></p>
+<button type="button" class="button button-secondary" id="changePwBtn">Change Password</button>
+</div>
+<form id="changePwForm" class="account-form is-hidden">
+<div class="form-group">
+<label for="changePwNew">New Password</label>
+<input type="password" id="changePwNew" placeholder="At least 6 characters" minlength="6" required>
+</div>
+<div class="form-group">
+<label for="changePwConfirm">Confirm New Password</label>
+<input type="password" id="changePwConfirm" placeholder="Repeat the new password" minlength="6" required>
+</div>
+<p class="account-form-error" id="changePwError"></p>
+<button type="submit" class="button button-primary">Send Security Code &rarr;</button>
+</form>
+<div id="changePwOtpHost" class="is-hidden"></div>
 </div>
 
 <div class="account-orders">
@@ -258,6 +318,7 @@ Don't want an account? <a href="catalogue.html">Continue shopping as a guest</a>
 <script src="js/icons.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
+<script src="js/mts-otp.js"></script>
 <script src="js/account.js"></script>
 </body>
 </html>

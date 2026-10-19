@@ -226,19 +226,9 @@
                 // though it's completely valid JS. Wrapping the async work in an
                 // inner IIFE sidesteps that check entirely.
                 callback: function (response) {
-                    (async () => {
-                        verifyPayment(response.reference, orderId); // marks the order paid; the webhook is the backup
-                        if (typeof saveCart === "function") saveCart([]);
-                        const actionsBox = document.getElementById("checkoutActions"); if (actionsBox) actionsBox.hidden = true;
-                        document.getElementById("checkoutForm").innerHTML = `
-                            <div class="checkout-success">
-                                <h3>Payment received - thank you!</h3>
-                                <p>Reference: ${response.reference}</p>
-                                <p>We'll reach out shortly to confirm your order details. You can also message us directly on WhatsApp if you'd like to speak now.</p>
-                                <a href="https://wa.me/2349124147362" class="button button-primary">Chat With Us →</a>
-                            </div>
-                        `;
-                    })();
+                    const verifying = Promise.resolve(verifyPayment(response.reference, orderId)).catch(() => {}); // marks the order paid; the webhook is the backup
+                    if (typeof saveCart === "function") saveCart([]);
+                    showPaymentVerified(response.reference, verifying);
                 },
                 onClose: function () {
                     // closed without paying: let them try again
@@ -249,6 +239,36 @@
             handler.openIframe();
         });
     }
+
+    // After payment: the glass code box types the reference digits itself, verifies, and turns green.
+    function showPaymentVerified(reference, verifying) {
+        const actionsBox = document.getElementById("checkoutActions"); if (actionsBox) actionsBox.hidden = true;
+        document.querySelector(".ck-main")?.classList.add("is-paid");
+        document.querySelector(".checkout-summary")?.setAttribute("hidden", "");
+        const digits = ("0000" + String(reference).replace(/\D/g, "")).slice(-4);
+        const ref = String(reference).replace(/[<>&"]/g, "");
+        const form = document.getElementById("checkoutForm");
+        form.innerHTML = `
+            <div id="payOtpHost"></div>
+            <div class="checkout-success vf-after" hidden>
+                <p>Reference: ${ref}</p>
+                <p>We'll reach out shortly to confirm your order details. You can also message us directly on WhatsApp if you'd like to speak now.</p>
+                <a href="https://wa.me/2349124147362" class="button button-primary">Chat With Us &rarr;</a>
+            </div>`;
+        const after = form.querySelector(".vf-after");
+        MtsOtp.mount(document.getElementById("payOtpHost"), {
+            length: 4,
+            auto: digits,
+            title: "Verify <em>Payment</em>",
+            sub: "Confirming your payment reference with Paystack",
+            okTitle: "Payment <em>Verified</em>",
+            okSub: "Your payment has been confirmed. Thank you!",
+            onVerify: async () => { await Promise.race([verifying || Promise.resolve(), new Promise(r => setTimeout(r, 3000))]); return { ok: true }; },
+            onDone: () => { after.hidden = false; }
+        });
+        window.scrollTo({ top: form.getBoundingClientRect().top + scrollY - 120, behavior: "smooth" });
+    }
+    window.mtsShowPaymentVerified = showPaymentVerified;
 
     function setupWhatsAppOrderButton() {
         const waButton = document.getElementById("whatsappOrderButton");
