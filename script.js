@@ -630,7 +630,7 @@ function setupCartDrawer(forceOpen) {
             <div class="cart-drawer-backdrop"></div>
             <div class="cart-drawer-panel">
                 <div class="cart-drawer-header">
-                    <div class="cart-head-text"><span class="cart-kicker">// YOUR CART</span><h3>Your <em>Bag</em></h3></div>
+                    <div class="cart-head-text"><span class="cart-kicker">YOUR CART</span><h3>Your <em>Bag</em></h3></div>
                     <span class="cart-drawer-count"></span>
                     <button type="button" class="cart-drawer-close" aria-label="Close">&times;</button>
                 </div>
@@ -1019,13 +1019,13 @@ function setupWhatsAppWidget() {
             </div>
             <div class="wa-widget-body">
                 <div class="wa-widget-bubble">
-                    Hi, welcome to Mars Tee Studio 👋 How can we help you today?
+                    Hi, welcome to Mars Tee Studio. How can we help you today?
                     <span class="wa-widget-time"></span>
                 </div>
             </div>
             <form class="wa-widget-input-row">
                 <input type="text" placeholder="Type a message.." aria-label="Message" required>
-                <button type="submit" aria-label="Send on WhatsApp">➤</button>
+                <button type="submit" aria-label="Send on WhatsApp">&rarr;</button>
             </form>
         </div>
         <button type="button" class="wa-widget-toggle" aria-label="Chat on WhatsApp">
@@ -2524,19 +2524,12 @@ console.log("%cDigital experiences. Premium design. Built to impress.", "font-si
     hero.addEventListener("pointerleave", () => { hero.style.setProperty("--mx", 0); hero.style.setProperty("--my", 0); });
 })();
 
-// Luxury layer: cursor glow, card spotlight, scroll progress
+// Scroll progress bar
 (function () {
     const bar = document.createElement("div"); bar.className = "mts-progress"; document.body.appendChild(bar);
     addEventListener("scroll", () => {
         const h = document.documentElement; const m = h.scrollHeight - h.clientHeight;
         bar.style.transform = "scaleX(" + (m > 0 ? h.scrollTop / m : 0) + ")";
-    }, { passive: true });
-    if (matchMedia("(pointer: coarse), (prefers-reduced-motion: reduce)").matches) return;
-    const glow = document.createElement("div"); glow.className = "mts-glow"; document.body.appendChild(glow);
-    addEventListener("pointermove", e => {
-        glow.style.transform = "translate(" + e.clientX + "px," + e.clientY + "px)";
-        const c = e.target.closest && e.target.closest(".service-card,.catalogue-card,.cta-box");
-        if (c) { const r = c.getBoundingClientRect(); c.style.setProperty("--px", (e.clientX - r.left) + "px"); c.style.setProperty("--py", (e.clientY - r.top) + "px"); }
     }, { passive: true });
 })();
 
@@ -2551,4 +2544,13 @@ console.log("%cDigital experiences. Premium design. Built to impress.", "font-si
         v.style.setProperty("--my", Math.max(-1, Math.min(1, (e.clientY - r.top) / r.height - 0.5)).toFixed(3));
     });
     host.addEventListener("pointerleave", () => { v.style.setProperty("--mx", 0); v.style.setProperty("--my", 0); });
+})();
+
+// Footer pill: highlight the page you are on
+(function () {
+    const here = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    document.querySelectorAll(".mf2-pill a").forEach(a => {
+        const target = (a.getAttribute("href") || "").split("#")[0].toLowerCase();
+        a.classList.toggle("is-active", target === here || (here === "" && target === "index.html"));
+    });
 })();
