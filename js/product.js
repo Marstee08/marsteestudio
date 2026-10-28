@@ -55,6 +55,10 @@
             demoButton = `<button type="button" class="button button-secondary view-live-btn" data-url="${escapeHtml(liveUrl)}" data-i18n="new.viewLive">View Live Demo ↗</button>`;
         }
 
+        const liveButton = (demoVideoUrl && liveUrl)
+            ? `<a href="${escapeHtml(liveUrl)}" target="_blank" rel="noopener" class="button button-secondary live-site-btn">Visit Live Site &#8599;</a>`
+            : "";
+
         const waText = encodeURIComponent(`Hi Mars Tee Studio, I'd like to ask about "${name}".`);
         const planText = encodeURIComponent("Hi Mars Tee Studio, I'd like to pay for \"" + name + "\" in installments. What plan can you offer?");
         const tier = info.tier ? info.tier.charAt(0).toUpperCase() + info.tier.slice(1) : "";
@@ -75,6 +79,7 @@
                         ${info.hasPrice ? `<button type="button" class="button button-primary add-to-cart-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(images[0] || "")}" data-i18n="new.addToCart">Add to Cart</button>` : ""}
                         ${info.hasPrice ? `<button type="button" class="button button-secondary buy-now-btn" data-id="${escapeHtml(String(product.id))}" data-name="${escapeHtml(name)}" data-price="${info.price}" data-price-usd="${info.priceUsd || ""}" data-image="${escapeHtml(images[0] || "")}" data-i18n="new.buyNow">Buy Now</button>` : ""}
                         ${demoButton}
+                        ${liveButton}
                         ${info.hasPrice ? `<a href="https://wa.me/2349124147362?text=${planText}" target="_blank" rel="noopener" class="button button-secondary" data-i18n="new.installmentPay">Installment pay</a>` : ""}
                         <a href="https://wa.me/2349124147362?text=${waText}" target="_blank" rel="noopener" class="button wa-full" data-i18n="new.contactWhatsapp">Contact via WhatsApp</a>
                     </div>

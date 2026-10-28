@@ -1238,10 +1238,17 @@ function getTierPriceUsd(category, tier) {
     return TIER_PRICING_USD[category]?.[tier];
 }
 
+// A product can carry its own dollar price (Product.price_usd); otherwise the tier price is used.
+function getProductUsd(product, category, tier) {
+    const own = Number(product && product.price_usd);
+    return own > 0 ? own : getTierPriceUsd(category, tier);
+}
+
 async function getProductImage(path) {
     if (!path) return "";
 
     if (/^https?:\/\//i.test(String(path))) return String(path);
+    if (/^(images|videos)\//i.test(String(path))) return String(path); // file that ships with the site
     if (!siteSupabaseClient) return "";
 
     const cleanPath = String(path).replace(/^\/+/, "");
@@ -1300,7 +1307,7 @@ async function loadCatalogueProducts() {
             const priceHasValue = Number.isFinite(price) &&
                 (fixedPrice !== undefined || (product.Price !== null && product.Price !== undefined));
             const pricePrefix = FROM_PRICE_TIERS[category]?.[tier] ? "From " : "";
-            const priceUsd = getTierPriceUsd(category, tier) || "";
+            const priceUsd = getProductUsd(product, category, tier) || "";
 
             const demoVideoUrl = product.demo_video_url || "";
             const liveUrl = product.website_url || "";
@@ -1472,7 +1479,7 @@ function mtsProductPricing(product) {
     const hasPrice = Number.isFinite(price) &&
         (fixedPrice !== undefined || (product.Price !== null && product.Price !== undefined));
     const prefix = FROM_PRICE_TIERS[category]?.[tier] ? "From " : "";
-    const priceUsd = getTierPriceUsd(category, tier) || 0;
+    const priceUsd = getProductUsd(product, category, tier) || 0;
     return { type, category, tier, price, priceUsd, hasPrice, prefix };
 }
 
@@ -1742,6 +1749,7 @@ loadHomeProducts();
 async function getPortfolioImage(path) {
     if (!path) return "";
     if (/^https?:\/\//i.test(String(path))) return String(path);
+    if (/^(images|videos)\//i.test(String(path))) return String(path);
     if (!siteSupabaseClient) return "";
 
     const cleanPath = String(path).replace(/^\/+/, "");
@@ -2553,4 +2561,24 @@ console.log("%cDigital experiences. Premium design. Built to impress.", "font-si
         const target = (a.getAttribute("href") || "").split("#")[0].toLowerCase();
         a.classList.toggle("is-active", target === here || (here === "" && target === "index.html"));
     });
+})();
+
+
+// Header: hides while you scroll down to give room, comes straight back when you scroll up
+(function () {
+    const header = document.querySelector(".site-header");
+    if (!header) return;
+    let last = window.scrollY, ticking = false;
+    addEventListener("scroll", () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+            const y = window.scrollY, d = y - last;
+            const menuOpen = document.body.classList.contains("nav-open");
+            if (menuOpen || y < 90) header.classList.remove("header-hidden");
+            else if (d > 8) header.classList.add("header-hidden");
+            else if (d < -4) header.classList.remove("header-hidden");
+            last = y; ticking = false;
+        });
+    }, { passive: true });
 })();

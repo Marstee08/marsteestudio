@@ -762,6 +762,20 @@
 
                     </label>
 
+                    <label>
+
+                        Price in dollars (USD, optional)
+
+                        <input
+                            type="number"
+                            id="productPriceUsd"
+                            min="0"
+                            step="0.01"
+                            placeholder="Leave empty to use the package price"
+                        >
+
+                    </label>
+
 
                     <!-- PROJECT TYPE -->
 
@@ -1918,6 +1932,7 @@ productForm?.addEventListener("submit",async e=>{
             Name:name,
             Description:description,
             Price:price,
+            price_usd:(document.getElementById("productPriceUsd")&&document.getElementById("productPriceUsd").value)?Number(document.getElementById("productPriceUsd").value):null,
             Image_url:imageUrl,
             Is_active:isActive,
             project_type:type,
@@ -2059,6 +2074,7 @@ function startEditing(product){
     set("productName",product.Name);
     set("productDescription",product.Description);
     set("productPrice",product.Price);
+    set("productPriceUsd",product.price_usd);
     set("clientName",product.client_name);
     set("websiteUrl",product.website_url);
     set("productWebsiteUrl",product.website_url);

@@ -197,7 +197,8 @@ html.dark-theme body .about-intro-visual.ab-visual{position:relative;background:
   /* backdrop-filter on the header trapped the fixed menu inside the 72px bar */
   .site-header,html.dark-theme .site-header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(5,8,16,.94)!important}
   .nav-overlay{display:none!important}
-  body.nav-open [class*="pwa-install"],body.nav-open .whatsapp-float,body.nav-open   html body .main-nav{position:fixed!important;inset:0!important;width:100%!important;max-width:none!important;height:100dvh;border:0!important;box-shadow:none!important;border-radius:0!important;
+  body.nav-open [class*="pwa-install"],body.nav-open .whatsapp-float{opacity:0!important;pointer-events:none!important}
+  html body .main-nav{position:fixed!important;inset:0!important;width:100%!important;max-width:none!important;height:100dvh;border:0!important;box-shadow:none!important;border-radius:0!important;
     display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:none!important;grid-auto-rows:min-content;align-content:start;gap:0;padding:0 0 env(safe-area-inset-bottom)!important;
     background:radial-gradient(90% 55% at 100% 0%,rgba(47,140,255,.28),transparent 60%),radial-gradient(70% 50% at 0% 100%,rgba(11,99,246,.22),transparent 60%),linear-gradient(rgba(74,163,255,.05) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,rgba(74,163,255,.05) 1px,transparent 1px) 0 0/48px 48px,#050810!important;
     transform:none!important;clip-path:circle(0 at calc(100% - 38px) 38px);visibility:hidden;overflow-y:auto;z-index:100000!important;counter-reset:mnav;
@@ -533,3 +534,13 @@ html body .site-footer .mf2-mail{color:#c3cde2!important}
 html body .site-footer .mf2-actions .button-primary{color:#fff!important}
 html body .site-footer .mf2-actions .button-secondary{color:#eef4ff!important}
 @media (max-width:560px){.mf2-pill a{font-size:.62rem}}
+
+/* ===== fixes from the phone screenshots ===== */
+.site-header{transition:transform .3s ease}
+.site-header.header-hidden{transform:translateY(-100%)}
+/* product page: a long thumbnail row must never make the whole page wider than the screen */
+.product-layout>*,.product-gallery,.product-info{min-width:0}
+.product-thumbs{max-width:100%}
+.product-actions .button{min-width:0;white-space:normal;line-height:1.25}
+/* footer: keep the last links clear of the floating buttons */
+.mf2-bottom{padding-bottom:84px}
