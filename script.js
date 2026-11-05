@@ -1247,9 +1247,9 @@ function getTierPriceUsd(category, tier) {
 
 // A product can carry its own dollar price (Product.price_usd); otherwise the tier price is used.
 // If no dollar price is typed, overseas (US-market) prices sit ABOVE the plain naira conversion:
-// dollars = naira / USD_UPLIFT_NGN_PER_USD, rounded to the nearest $5 (350,000 -> $440, 250,000 -> $315).
+// dollars = naira / USD_UPLIFT_NGN_PER_USD, rounded to the nearest $5 (100,000 -> $100, 350,000 -> $350).
 // Visitors paying in dollars are charged dollars x FIXED_NGN_PER_USD in naira, so the extra is real.
-const USD_UPLIFT_NGN_PER_USD = 800;
+const USD_UPLIFT_NGN_PER_USD = 1000;
 function getProductUsd(product, category, tier) {
     const own = Number(product && product.price_usd);
     if (own > 0) return own;

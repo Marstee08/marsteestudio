@@ -6,7 +6,7 @@
 // listings, reviews, and prices should always come from the network when
 // available, never served stale from a cache.
 
-const CACHE_NAME = "mts-shell-v7";
+const CACHE_NAME = "mts-shell-v8";
 const APP_SHELL = [
     "/",
     "/style.css",
