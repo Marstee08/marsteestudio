@@ -6,11 +6,12 @@
 // listings, reviews, and prices should always come from the network when
 // available, never served stale from a cache.
 
-const CACHE_NAME = "mts-shell-v2";
+const CACHE_NAME = "mts-shell-v7";
 const APP_SHELL = [
-    "/index.html",
+    "/",
     "/style.css",
     "/luxury.css",
+    "/physical.css",
     "/script.js",
     "/css/icons.css",
     "/js/icons.js",
@@ -55,6 +56,6 @@ self.addEventListener("fetch", (event) => {
                 caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
                 return response;
             })
-            .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/index.html")))
+            .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/")))
     );
 });

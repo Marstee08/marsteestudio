@@ -130,7 +130,7 @@ function showGridError(grid, retryFn) {
             <p>That's likely a connection hiccup on our end, not yours. Please try again, or reach us directly and we'll sort you out.</p>
             <div class="grid-error-actions">
                 <button type="button" class="button button-primary grid-retry-btn">Try Again</button>
-                <a href="contact.html" class="button button-secondary">Contact Us</a>
+                <a href="/contact" class="button button-secondary">Contact Us</a>
             </div>
         </div>
     `;
@@ -235,10 +235,17 @@ async function fetchLiveRates() {
     return null;
 }
 
+// OUR OWN RATE: the studio sets how many Naira equal 1 US dollar (close to the market, not live).
+// This rate is also what a visitor paying in dollars is charged in Naira (dollar price x this rate).
+// Change this one number to move every dollar, pound, euro, CAD and AUD price on the site.
+const FIXED_NGN_PER_USD = 1400;
+
 function getRate(code) {
     if (code === "NGN") return 1;
-    if (liveRates && liveRates[code]) return liveRates[code];
-    if (FALLBACK_RATES[code]) return FALLBACK_RATES[code];
+    if (code === "USD") return 1 / FIXED_NGN_PER_USD;
+    // Other currencies keep their live value against the dollar, then use our dollar rate.
+    if (liveRates && liveRates.USD && liveRates[code]) return (liveRates[code] / liveRates.USD) / FIXED_NGN_PER_USD;
+    if (FALLBACK_RATES[code]) return FALLBACK_RATES[code] * (1600 / FIXED_NGN_PER_USD);
     return null; // unsupported until live rates load - caller should show NGN
 }
 
@@ -550,10 +557,10 @@ document.addEventListener("DOMContentLoaded", setupCartIcon);
 
 function setupAccountIcon() {
     const nav = document.querySelector(".main-nav");
-    if (!nav || nav.querySelector(".account-icon-btn") || window.location.pathname.endsWith("account.html")) return;
+    if (!nav || nav.querySelector(".account-icon-btn") || /\/account(\.html)?$/.test(window.location.pathname)) return;
 
     const link = document.createElement("a");
-    link.href = "account.html";
+    link.href = "/account";
     link.className = "account-icon-btn";
     link.setAttribute("aria-label", "My account");
     link.innerHTML = `
@@ -585,7 +592,7 @@ function renderCartDrawerContents() {
     const cart = getCart();
 
     if (!cart.length) {
-        body.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">${CART_BAG_SVG}</div><strong>Your cart is empty</strong><p>Pick a package or digital experience and it will appear here.</p><a href="catalogue.html" class="button button-primary">Browse the Catalogue &rarr;</a></div>`;
+        body.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">${CART_BAG_SVG}</div><strong>Your cart is empty</strong><p>Pick a package or digital experience and it will appear here.</p><a href="/catalogue" class="button button-primary">Browse the Catalogue &rarr;</a></div>`;
         footer.innerHTML = "";
         const cnt0 = document.querySelector(".cart-drawer-count"); if (cnt0) cnt0.textContent = "";
         return;
@@ -666,7 +673,7 @@ function setupCartDrawer(forceOpen) {
 
         drawer.addEventListener("click", event => {
             if (event.target.closest(".cart-checkout-btn")) {
-                window.location.href = "checkout.html";
+                window.location.href = "/checkout";
             }
             if (event.target.closest(".cart-continue-btn") || event.target.closest(".cart-empty a")) {
                 drawer.classList.add("hidden");
@@ -1134,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const foot = document.createElement("div");
         foot.className = "drawer-foot";
         foot.innerHTML = '<a class="drawer-whatsapp" href="https://wa.me/2349124147362" target="_blank" rel="noopener" data-i18n="new.whatsappUs">WhatsApp Us</a>' +
-                         '<a class="drawer-signin" href="account.html" data-i18n="new.signIn">Sign In</a>';
+                         '<a class="drawer-signin" href="/account" data-i18n="new.signIn">Sign In</a>';
         mainNav.appendChild(foot);
         retranslate();
         // Logged-in visitors see "My Account" instead of "Sign In".
@@ -1239,9 +1246,17 @@ function getTierPriceUsd(category, tier) {
 }
 
 // A product can carry its own dollar price (Product.price_usd); otherwise the tier price is used.
+// If no dollar price is typed, overseas (US-market) prices sit ABOVE the plain naira conversion:
+// dollars = naira / USD_UPLIFT_NGN_PER_USD, rounded to the nearest $5 (350,000 -> $440, 250,000 -> $315).
+// Visitors paying in dollars are charged dollars x FIXED_NGN_PER_USD in naira, so the extra is real.
+const USD_UPLIFT_NGN_PER_USD = 800;
 function getProductUsd(product, category, tier) {
     const own = Number(product && product.price_usd);
-    return own > 0 ? own : getTierPriceUsd(category, tier);
+    if (own > 0) return own;
+    const tierUsd = getTierPriceUsd(category, tier);
+    if (tierUsd) return tierUsd;
+    const ngn = Number(product && (product.Price ?? product.price));
+    return ngn > 0 ? Math.round(ngn / USD_UPLIFT_NGN_PER_USD / 5) * 5 : undefined;
 }
 
 async function getProductImage(path) {
@@ -1360,7 +1375,7 @@ async function loadCatalogueProducts() {
         if (!showAll && data.length > PREVIEW_COUNT) {
             grid.insertAdjacentHTML("afterend", `
                 <div class="see-more-wrap">
-                    <a href="catalogue.html?view=all" class="button button-secondary">See More Products →</a>
+                    <a href="/catalogue?view=all" class="button button-secondary">See More Products →</a>
                 </div>
             `);
         }
@@ -1465,7 +1480,7 @@ function setupProductCardLinks() {
         if (event.target.closest("a, button")) return;
         const card = event.target.closest(".catalogue-card[data-product-id]");
         if (!card) return;
-        location.href = "product.html?id=" + encodeURIComponent(card.dataset.productId);
+        location.href = "/product?id=" + encodeURIComponent(card.dataset.productId);
     });
 }
 
@@ -1494,7 +1509,7 @@ async function mtsProductCardHtml(product) {
     const image = await getProductImage(product.Image_url || product.front_image_url || "");
     const name = product.Name || "Untitled Service";
     return `
-        <a class="pcard" href="product.html?id=${encodeURIComponent(product.id)}">
+        <a class="pcard" href="/product?id=${encodeURIComponent(product.id)}">
             <div class="pcard-img">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" loading="lazy">` : ""}</div>
             <div class="pcard-body">
                 <span class="pcard-type">${escapeHtml(info.type.toUpperCase())}</span>
@@ -1535,7 +1550,7 @@ async function mtsFeedSlideHtml(product) {
         : `<a class="feed-btn feed-btn-ghost" href="https://wa.me/2349124147362?text=${encodeURIComponent(`Hi Mars Tee Studio, I'd like to ask about "${name}".`)}" target="_blank" rel="noopener" data-i18n="new.enquire">Enquire</a>`;
     return `
         <article class="mslide" aria-label="${escapeHtml(name)}">
-            <a class="mimg" href="product.html?id=${id}" aria-label="${escapeHtml(name)}">
+            <a class="mimg" href="/product?id=${id}" aria-label="${escapeHtml(name)}">
                 <span class="mbox"${image ? ` style="--img:url(&#039;${escapeHtml(image)}&#039;)"` : ""}>${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy">` : ""}</span>
             </a>
             <div class="feed-body mcard">
@@ -1544,9 +1559,9 @@ async function mtsFeedSlideHtml(product) {
                 ${mtsPriceHtml(info)}
                 <p class="feed-desc">${escapeHtml(product.Description || "")}</p>
                 <div class="feed-actions">
-                    <a class="feed-btn feed-btn-primary" href="product.html?id=${id}" data-i18n="new.details">Details</a>
+                    <a class="feed-btn feed-btn-primary" href="/product?id=${id}" data-i18n="new.details">Details</a>
                     ${buy}
-                    <a class="feed-btn feed-btn-light" href="catalogue.html?view=all" data-i18n="new.more">More</a>
+                    <a class="feed-btn feed-btn-light" href="/catalogue?view=all" data-i18n="new.more">More</a>
                 </div>
             </div>
         </article>`;
@@ -1620,7 +1635,7 @@ document.addEventListener("click", event => {
         });
         saveCart(cart);
     }
-    location.href = "checkout.html";
+    location.href = "/checkout";
 });
 
 const HOME_PRODUCTS_CACHE = "mts_home_products";
@@ -1905,7 +1920,7 @@ async function loadPortfolioProducts() {
         if (!showAll && data.length > PREVIEW_COUNT) {
             grid.insertAdjacentHTML("afterend", `
                 <div class="see-more-wrap">
-                    <a href="catalogue.html" class="button button-secondary">See More Work →</a>
+                    <a href="/catalogue" class="button button-secondary">See More Work →</a>
                 </div>
             `);
         } else {
@@ -2275,7 +2290,10 @@ document.addEventListener("DOMContentLoaded", setupHeroSlider);
    - Skipped entirely for prefers-reduced-motion.
    ========================================================= */
 
-window.addEventListener("load", () => {
+function startCinematicIntro() {
+    // Runs as soon as the page structure is ready, NOT on window "load", because "load"
+    // waits for every image/font and on a slow connection that left the intro stuck
+    // until the visitor tapped skip.
     const intro = document.getElementById("cinematicIntro");
     if (!intro) return;
 
@@ -2299,7 +2317,13 @@ window.addEventListener("load", () => {
 
     intro.addEventListener("click", endIntro);
     setTimeout(endIntro, 2000);
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startCinematicIntro);
+} else {
+    startCinematicIntro();
+}
 
 /* =========================================================
    PAGE LOADER - shown on every page load, hidden once ready
@@ -2556,10 +2580,13 @@ console.log("%cDigital experiences. Premium design. Built to impress.", "font-si
 
 // Footer pill: highlight the page you are on
 (function () {
-    const here = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    const clean = (p) => {
+        p = (p || "").split("#")[0].split("?")[0].toLowerCase().replace(/\.html$/, "").replace(/^\/+|\/+$/g, "");
+        return p === "" ? "index" : p;
+    };
+    const here = clean(location.pathname);
     document.querySelectorAll(".mf2-pill a").forEach(a => {
-        const target = (a.getAttribute("href") || "").split("#")[0].toLowerCase();
-        a.classList.toggle("is-active", target === here || (here === "" && target === "index.html"));
+        a.classList.toggle("is-active", clean(a.getAttribute("href")) === here);
     });
 })();
 

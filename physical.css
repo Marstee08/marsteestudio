@@ -1,0 +1,108 @@
+/* PHYSICAL LUXURY LAYER: loads after luxury.css.
+   Tactile depth (light from above, real shadows, pressable buttons) and slow, quiet motion.
+   No glows, no gradient text, no flashing. Everything respects reduced-motion. */
+
+html{scroll-behavior:smooth}
+::selection{background:#1f6bff;color:#fff}
+*:focus-visible{outline:2px solid #7fd4ff;outline-offset:3px;border-radius:4px}
+html{scrollbar-color:#24304f #050810;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#050810}
+::-webkit-scrollbar-thumb{background:#24304f;border-radius:10px;border:2px solid #050810}
+
+/* ---------- header: hairline + soft shadow like a glass edge ---------- */
+html body .site-header{border-bottom:1px solid rgba(255,255,255,.07)!important;box-shadow:0 14px 30px -24px rgba(0,0,0,.9)}
+
+/* ---------- cards as physical objects ---------- */
+html body :is(.service-card,.catalogue-card,.process-step,.faq-item,.review-card,.contact-card,.value-card,.pricing-card,.package-card,.product-info,.surprise-card,.guideline-card,.stage-card,.mslide .minfo){
+  background:linear-gradient(180deg,#0e1729 0%,#0a1020 100%)!important;
+  border:1px solid rgba(255,255,255,.075)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.09),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 1px 2px rgba(0,0,0,.55),
+    0 12px 22px -10px rgba(0,0,0,.6),
+    0 34px 60px -28px rgba(0,0,0,.7)!important;
+  transition:transform .6s cubic-bezier(.2,.7,.2,1),box-shadow .6s cubic-bezier(.2,.7,.2,1),border-color .6s ease;
+}
+html body :is(.service-card,.catalogue-card,.value-card,.package-card,.surprise-card,.review-card,.pricing-card,.guideline-card):hover{
+  transform:translateY(-6px);
+  border-color:rgba(255,255,255,.13)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 2px 4px rgba(0,0,0,.55),
+    0 22px 34px -12px rgba(0,0,0,.65),
+    0 50px 80px -30px rgba(0,0,0,.75)!important;
+}
+
+/* ---------- buttons you can press ---------- */
+html body :is(.button-primary,.nav-button,.nav-cta,.availability-actions .button-primary,.otp-btn,.cart-checkout-btn){
+  background:linear-gradient(180deg,#3a82ff 0%,#1f6bff 52%,#1a5fe6 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.38),
+    inset 0 -2px 0 rgba(0,0,0,.2),
+    0 1px 2px rgba(0,0,0,.45),
+    0 12px 22px -10px rgba(31,107,255,.7)!important;
+  transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s ease,filter .35s ease;
+}
+html body :is(.button-primary,.nav-button,.nav-cta,.availability-actions .button-primary,.otp-btn,.cart-checkout-btn):hover{
+  transform:translateY(-2px);filter:brightness(1.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.2),0 2px 3px rgba(0,0,0,.45),0 18px 28px -10px rgba(31,107,255,.8)!important;
+}
+html body :is(.button-primary,.nav-button,.nav-cta,.availability-actions .button-primary,.otp-btn,.cart-checkout-btn):active{
+  transform:translateY(1px);filter:brightness(.97);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.35),0 1px 1px rgba(0,0,0,.4)!important;transition-duration:.08s;
+}
+html body .button-secondary{
+  background:linear-gradient(180deg,#111b30,#0b1324)!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 2px rgba(0,0,0,.5),0 10px 18px -10px rgba(0,0,0,.6)!important;
+  transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s ease,border-color .35s ease;
+}
+html body .button-secondary:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.26)!important}
+html body .button-secondary:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.4)!important}
+
+/* ---------- photography sits in the page like framed prints ---------- */
+html body :is(.catalogue-image,.ab-frame){box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 26px 50px -26px rgba(0,0,0,.85)!important;overflow:hidden}
+.catalogue-image img,.product-gallery img{transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.catalogue-card:hover .catalogue-image img{transform:scale(1.045)}
+
+/* ---------- quiet motion ---------- */
+@keyframes physSlowZoom{from{transform:scale(1)}to{transform:scale(1.07)}}
+.hero-slide.is-active img,.ab-frame img.about-photo{animation:physSlowZoom 28s ease-in-out infinite alternate;will-change:transform}
+
+@keyframes physPageIn{from{opacity:0}to{opacity:1}}
+main{animation:physPageIn .9s cubic-bezier(.2,.7,.2,1) backwards}
+
+.reveal,.reveal-left,.reveal-right,.reveal-scale{transition-duration:1.05s!important;transition-timing-function:cubic-bezier(.2,.7,.2,1)!important}
+.reveal{transform:translateY(20px)}
+.reveal.active{transform:none}
+.reveal:nth-child(2){transition-delay:.09s!important}
+.reveal:nth-child(3){transition-delay:.18s!important}
+.reveal:nth-child(4){transition-delay:.27s!important}
+.reveal:nth-child(5){transition-delay:.36s!important}
+.reveal:nth-child(6){transition-delay:.45s!important}
+
+/* form fields: a calm focus, not a glow */
+html body :is(input,textarea,select):focus{transition:box-shadow .35s ease,border-color .35s ease}
+
+/* ---------- 404: large outlined numerals, lots of air ---------- */
+.not-found-hero{min-height:72vh;display:grid;place-items:center;text-align:center}
+.not-found-content{max-width:680px}
+html body .not-found-content .not-found-number{font-family:var(--serif)!important;font-weight:500!important;font-size:clamp(7rem,26vw,15rem)!important;line-height:.9!important;letter-spacing:.02em;color:transparent!important;-webkit-text-fill-color:transparent!important;-webkit-text-stroke:1px rgba(255,255,255,.3)!important;background:none!important;margin:.15em 0 .1em!important}
+.not-found-content h2{margin-bottom:.5em}
+.not-found-content h2 span{color:var(--tech-hi)!important;background:none!important;-webkit-text-fill-color:currentColor!important}
+.not-found-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:28px 0 22px}
+.not-found-help a{text-decoration:underline;text-underline-offset:4px}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .hero-slide.is-active img,.ab-frame img.about-photo,main{animation:none!important}
+  .reveal,.reveal-left,.reveal-right,.reveal-scale{transition-duration:.01s!important;transform:none!important}
+  html body :is(.service-card,.catalogue-card,.value-card,.package-card,.surprise-card,.review-card,.button-primary,.button-secondary):hover{transform:none}
+}
+
+/* Failsafe: even if scripts are slow or blocked, the intro always leaves by itself */
+@keyframes cineFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
+.cine-intro{animation:cineFailsafe .6s ease 4s forwards}

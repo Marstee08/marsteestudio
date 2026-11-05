@@ -9,7 +9,7 @@
     const id = new URLSearchParams(location.search).get("id");
 
     function showState(message) {
-        root.innerHTML = `<div class="product-state"><h2>${message}</h2><p><a href="catalogue.html" class="button button-primary">Browse catalogue</a></p></div>`;
+        root.innerHTML = `<div class="product-state"><h2>${message}</h2><p><a href="/catalogue" class="button button-primary">Browse catalogue</a></p></div>`;
     }
 
     if (!id || typeof siteSupabaseClient === "undefined" || !siteSupabaseClient) {
@@ -112,7 +112,7 @@
             relatedRow.innerHTML = (await Promise.all(picks.map(mtsProductCardHtml))).join("");
             if (typeof refreshDisplayedPrices === "function") refreshDisplayedPrices();
         } else {
-            relatedRow.innerHTML = `<div class="related-empty"><p data-i18n="new.moreSoon">More products are coming soon.</p><a href="catalogue.html" class="button button-secondary" data-i18n="new.browseCatalogue">Browse the catalogue</a></div>`;
+            relatedRow.innerHTML = `<div class="related-empty"><p data-i18n="new.moreSoon">More products are coming soon.</p><a href="/catalogue" class="button button-secondary" data-i18n="new.browseCatalogue">Browse the catalogue</a></div>`;
         }
         retranslate();
     } catch (error) {

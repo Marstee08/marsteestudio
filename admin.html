@@ -624,7 +624,7 @@
                     <button type="button" class="admin-nav-btn" data-go="slides">🖼️ <span>Slides</span></button>
                     <button type="button" class="admin-nav-btn" data-go="products">🛍️ <span>Products</span></button>
                     <button type="button" class="admin-nav-btn" data-go="reviews">⭐ <span>Reviews</span></button>
-                    <a class="admin-nav-btn" href="index.html" target="_blank" rel="noopener">🌐 <span>View website</span></a>
+                    <a class="admin-nav-btn" href="/" target="_blank" rel="noopener">🌐 <span>View website</span></a>
                 </nav>
                 <button type="button" class="admin-nav-btn admin-signout" id="logoutButton">🚪 <span>Sign out</span></button>
             </aside>
@@ -974,16 +974,12 @@
                     </label>
 
 
-                    <label>
+                    <label hidden style="display:none">
 
                         Package
 
                         <select id="productPackage">
                             <option value="">No package (one-off item)</option>
-                            <option value="Basic">Basic</option>
-                            <option value="Standard">Standard</option>
-                            <option value="Premium">Premium</option>
-                            <option value="Luxury">Luxury</option>
                         </select>
 
                     </label>
@@ -1514,7 +1510,7 @@ async function checkPaymentMode(){
     } catch (e) {
         const why = String((e && e.message) || e || "unknown error").slice(0, 160);
         const local = location.protocol === "file:"
-            ? "<br>You opened this page from a file on your computer. Open <b>https://marsteestudio.vercel.app/admin.html</b> instead and check again."
+            ? "<br>You opened this page from a file on your computer. Open <b>https://marsteestudio.vercel.app/admin</b> instead and check again."
             : "";
         show("bad", "Could not check the payment setup right now." + local + "<br><small>" + ordersEsc(why) + "</small>");
     }

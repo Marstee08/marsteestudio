@@ -18,7 +18,7 @@
         if (!itemsEl || !totalEl) return cart;
 
         if (!cart.length) {
-            itemsEl.innerHTML = `<p class="checkout-empty">Your cart is empty. <a href="catalogue.html">Browse the catalogue</a> to add something first.</p>`;
+            itemsEl.innerHTML = `<p class="checkout-empty">Your cart is empty. <a href="/catalogue">Browse the catalogue</a> to add something first.</p>`;
             totalEl.textContent = formatNaira(0);
             const payBtn = document.getElementById("payButton");
             const waBtn = document.getElementById("whatsappOrderButton");
@@ -77,7 +77,7 @@
 
         const banner = document.getElementById("checkoutLoginBanner");
         if (banner) {
-            banner.innerHTML = `Checking out as <strong>${currentUser.email}</strong> - orders will be saved to your account. <a href="account.html">Not you?</a>`;
+            banner.innerHTML = `Checking out as <strong>${currentUser.email}</strong> - orders will be saved to your account. <a href="/account">Not you?</a>`;
             banner.classList.remove("is-hidden");
         }
     }

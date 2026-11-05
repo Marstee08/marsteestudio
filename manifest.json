@@ -3,7 +3,7 @@
   "name": "Mars Tee Studio",
   "short_name": "Mars Tee",
   "description": "Premium web development, digital experiences and creative services.",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#050810",
